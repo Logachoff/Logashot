@@ -1,0 +1,16 @@
+PySide6
+keyboard
+pywin32
+# OCR локально (Windows.Media.Ocr, офлайн): PyWinRT, MIT.
+# В ТЗ DS-7 назван пакет winsdk, но у него нет колёс для Python 3.14
+# (только cp38–cp312, сборка из исходников требует MSVC) — берём его же
+# продолжение: winrt-runtime + проекции нужных пространств имён.
+winrt-runtime
+winrt-Windows.Foundation
+winrt-Windows.Foundation.Collections
+winrt-Windows.Globalization
+winrt-Windows.Graphics.Imaging
+winrt-Windows.Media.Ocr
+winrt-Windows.Storage.Streams
+# ставится как зависимость winrt-runtime (PyWinRT, MIT): PSF-2.0
+typing_extensions
