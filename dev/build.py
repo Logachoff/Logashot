@@ -28,7 +28,6 @@ VERSION_FILE = ROOT / "dev" / "version_file.txt"
 
 # Модули Qt, которые приложение не использует — исключаем для уменьшения веса.
 _QT_EXCLUDES = [
-    "PySide6.QtNetwork",
     "PySide6.QtSql",
     "PySide6.QtMultimedia",
     "PySide6.QtMultimediaWidgets",
@@ -83,7 +82,7 @@ _OTHER_EXCLUDES = [
     "sklearn",
 ]
 
-# PyWinRT (OCR через Windows.Media.Ocr): проектции — Python-модули, но таблицу
+# PyWinRT (OCR через Windows.Media.Ocr): проекции — Python-модули, но таблицу
 # типов `_table.pywinrt` рантайм читает из папки рядом с модулем (__spec__.origin),
 # а модули из PYZ реального пути не имеют. Поэтому хук dev/hooks/hook-winrt.py
 # кладёт winrt в сборку файлами, а таблицы идут данными (_winrt_args).
@@ -126,8 +125,9 @@ _TRIM = [
     "PySide6/Qt6QmlModels.dll",
     "PySide6/Qt6QmlMeta.dll",
     "PySide6/qml",
-    # Сеть и crypto — приложение никуда не ходит
-    "PySide6/Qt6Network.dll",
+    # Сеть нужна проверке обновлений (QtNetwork): Qt6Network.dll и Qt-плагины
+    # tls остаются. OpenSSL Qt ждёт парой *-x64 — её не трогаем; пара без
+    # суффикса нужна только _hashlib.pyd, а он в сборке не работает.
     "libcrypto-3.dll",
     "libssl-3.dll",
     # PDF, VirtualKeyboard, OpenGL-software, ненужные платформы

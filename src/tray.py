@@ -2,7 +2,8 @@
 
 import sys
 
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import QUrl
+from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 
 import about
@@ -10,20 +11,25 @@ import autostart
 import hotkey
 import panel
 import settings
+import toast as toast_mod
+import updates
 
 
 class TrayIcon(QSystemTrayIcon):
     """Трей: ЛКМ = захват (как PrtScr), ПКМ = меню.
 
-    Порядок меню: «Снять скриншот» → «Сохранить все
-    экраны» → «Настройки» → «О программе» → «Выход». «Сохранить все экраны» —
-    тихий захват без оверлея (та же механика, что хоткей Shift+PrtScr);
-    «Настройки» открывает то же окно, что шестерёнка на панели, без захвата;
-    «О программе» — компактный диалог (план 27.10).
+    Порядок меню: «Снять скриншот» → «Сохранить все экраны» → «Проверить
+    обновления» → «Настройки» → «О программе» → «Выход». «Сохранить все
+    экраны» — тихий захват без оверлея (та же механика, что хоткей
+    Shift+PrtScr); «Настройки» открывает то же окно, что шестерёнка на
+    панели, без захвата; «О программе» — компактный диалог; «Проверить
+    обновления» — единственный пункт, который ходит в сеть, и только по
+    клику.
     """
 
     def __init__(self, icon: QIcon, on_capture, on_settings, on_quit,
-                 on_about=None, on_save_all=None, parent=None):
+                 on_about=None, on_save_all=None, on_check_updates=None,
+                 parent=None):
         super().__init__(icon, parent)
         self.setToolTip("LogaShot")
         self._on_capture = on_capture
@@ -34,6 +40,8 @@ class TrayIcon(QSystemTrayIcon):
         capture_action.triggered.connect(on_capture)
         save_all_action = menu.addAction("Сохранить все экраны")
         save_all_action.triggered.connect(on_save_all or on_capture)
+        check_action = menu.addAction("Проверить обновления")
+        check_action.triggered.connect(on_check_updates or self.check_updates)
         settings_action = menu.addAction("Настройки")
         settings_action.triggered.connect(on_settings)
         about_action = menu.addAction("О программе")
@@ -43,10 +51,41 @@ class TrayIcon(QSystemTrayIcon):
         quit_action.triggered.connect(on_quit)
         self.setContextMenu(menu)
 
+        self._checker = updates.UpdateChecker(self)
+        self._checker.finished.connect(self._show_update_result)
+        self._update_toasts = []  # живые тосты проверки — ссылку держим мы
+
     def _handle_activation(self, reason):
         # Trigger = одиночный ЛКМ; Context (ПКМ) обрабатывает сам Qt
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
             self._on_capture()
+
+    def check_updates(self):
+        """Пункт «Проверить обновления»: запрос по клику, повторный — no-op."""
+        self._checker.start()
+
+    def _show_update_result(self, state, found):
+        """Ответ проверки — тостом у иконки трея (тот же Toast)."""
+        action = None
+        if state == updates.NEWER:
+            # текст короче, чем в карточке: скачать можно прямо из тоста
+            text, action = f"Доступна версия {found}", "Скачать"
+        elif state == updates.ACTUAL:
+            text = "У вас актуальная версия"
+        else:
+            text = "Не удалось проверить — нет связи или GitHub недоступен"
+        toast = toast_mod.show_launch(text, self.geometry(),
+                                      action_text=action)
+        if action is not None:
+            toast.action_clicked.connect(self._open_releases)
+        self._update_toasts.append(toast)
+        toast.destroyed.connect(
+            lambda: self._update_toasts.remove(toast)
+            if toast in self._update_toasts else None)
+
+    def _open_releases(self):
+        """«Скачать» в тосте: страница последнего релиза в браузере."""
+        QDesktopServices.openUrl(QUrl(updates.RELEASES_URL))
 
 
 def _apply_hotkey(combo):

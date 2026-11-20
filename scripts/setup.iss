@@ -1,4 +1,4 @@
-; Inno Setup скрипт установщика LogaShot v0.3.2
+; Inno Setup скрипт установщика LogaShot v0.4.0
 ; Собирается из той же onedir-сборки, что и portable-версия.
 ; Установленная копия НЕ содержит маркера portable — настройки пойдут
 ; через QSettings в реестр/профиль пользователя.
@@ -11,7 +11,7 @@
 ; Бесшумная установка: setup.exe /VERYSILENT /NORESTART
 
 #define AppName      "LogaShot"
-#define AppVersion   "0.3.2"
+#define AppVersion   "0.4.0"
 #define AppPublisher "Мастерская Logachoff"
 #define AppURL       "https://logachoff.ru"
 #define AppExe       "LogaShot.exe"
@@ -32,7 +32,7 @@ MinVersion=10.0.17763
 DisableProgramGroupPage=yes
 PrivilegesRequiredOverridesAllowed=commandline
 OutputDir=..\dist
-OutputBaseFilename=LogaShot_0.3.2_setup
+OutputBaseFilename=LogaShot_0.4.0_setup
 SetupIconFile=..\assets\LogaShot.ico
 Compression=lzma2
 SolidCompression=yes

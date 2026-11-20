@@ -40,10 +40,11 @@ def test_tray_menu_has_settings_between(app):
                          on_save_all=lambda: calls.append("save_all"))
     actions = icon.contextMenu().actions()
     # порядок меню: «О программе» — после «Настроек», перед «Выходом»;
-    # «Сохранить все экраны» — сразу за «Снять скриншот»
+    # «Сохранить все экраны» — сразу за «Снять скриншот», «Проверить
+    # обновления» — между ними и настройками
     assert [a.text() for a in actions if not a.isSeparator()] == [
-        "Снять скриншот", "Сохранить все экраны", "Настройки", "О программе",
-        "Выход"]
+        "Снять скриншот", "Сохранить все экраны", "Проверить обновления",
+        "Настройки", "О программе", "Выход"]
     next(a for a in actions if a.text() == "Настройки").trigger()
     next(a for a in actions if a.text() == "О программе").trigger()
     next(a for a in actions if a.text() == "Сохранить все экраны").trigger()

@@ -116,15 +116,16 @@ def _anchor_rect(anchor, screen):
             _CORNER_ANCHOR, _CORNER_ANCHOR)
 
 
-def show_launch(text, anchor, duration_ms=_SHOW_MS):
+def show_launch(text, anchor, duration_ms=_SHOW_MS, action_text=None):
     """Тост о запуске у иконки трея: тот же Toast, без панели.
 
     Возвращает тост — ссылку держит вызывающий, иначе Qt соберёт окно
     сборщиком мусора. Позиция — по правилам panel_layout.toast_place:
     над иконкой трея, с клампом в экран. duration_ms — время до исчезновения
-    (тихий захват всех экранов — ~2 с).
+    (тихий захват всех экранов — ~2 с). action_text — inline-действие
+    (проверка обновлений из трея: «Скачать»).
     """
-    toast = Toast(text, duration_ms=duration_ms)
+    toast = Toast(text, action_text=action_text, duration_ms=duration_ms)
     toast.adjustSize()
     screen = _screen_rect(anchor)
     toast.move(*panel_layout.toast_place(

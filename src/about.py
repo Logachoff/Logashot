@@ -5,6 +5,10 @@
 Фон — тёмный NAVY, как у пин-окна; только токены темы, новых цветов нет.
 Закрытие — крестик или Esc. Открывается пунктом меню трея «О программе»;
 ЛКМ по иконке трея остаётся захватом (решение 16.10).
+
+«Проверить обновления» (0.4.0) — сеть только по этому клику: кнопка
+дизейблится на время запроса, результат появляется строкой в карточке,
+отдельных диалогов нет.
 """
 
 from PySide6.QtCore import QRectF, Qt, QUrl
@@ -17,15 +21,37 @@ from PySide6.QtGui import (
     QPainter,
     QPen,
 )
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 import icons
 import theme
+import updates
 import version
 
 SITE_URL = "https://logachoff.ru/"  # сайт автора
 AUTHOR = "Сергей Логачев"
 TITLE = "LogaShot"
+
+CHECK_TEXT = "Проверить обновления"
+BUSY_TEXT = "Проверяю…"
+NEWER_TEXT = "Доступна версия"
+ACTUAL_TEXT = "У вас актуальная версия"
+FAIL_TEXT = "Не удалось проверить — нет связи или GitHub недоступен"
+DOWNLOAD_TEXT = "Скачать"
+
+_FLAT_BUTTON = (
+    "QPushButton {{ border: none; background: transparent; color: {color};"
+    " font-size: {size}px; padding: 6px 8px; }}"
+    "QPushButton:hover {{ background: rgba(255, 255, 255, 18);"
+    " border-radius: 6px; }}"
+    "QPushButton:disabled {{ color: {muted}; }}"
+)
 
 
 class AboutDialog(QWidget):
@@ -107,9 +133,74 @@ class AboutDialog(QWidget):
         self.link.linkActivated.connect(self._open_site)
         layout.addWidget(self.link)
 
+        self.check_button = QPushButton(CHECK_TEXT, self)
+        self.check_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.check_button.setStyleSheet(_FLAT_BUTTON.format(
+            color=theme.ACCENT, size=13, muted=theme.MUTED))
+        self.check_button.clicked.connect(self._check_updates)
+        layout.addWidget(self.check_button)
+
+        # результат — строкой в карточке: версия и «Скачать» или одна фраза
+        self.result_row = QWidget(self)
+        column = QVBoxLayout(self.result_row)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(2)
+        self.result_label = QLabel("", self.result_row)
+        self.result_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.result_label.setWordWrap(True)
+        self.result_label.setTextFormat(Qt.TextFormat.RichText)
+        self.result_label.setStyleSheet(
+            f"color: {theme.GRAY}; font-size: 12px; padding-top: 4px;")
+        column.addWidget(self.result_label)
+        self.download_button = QPushButton(DOWNLOAD_TEXT, self.result_row)
+        self.download_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.download_button.setStyleSheet(_FLAT_BUTTON.format(
+            color=theme.ACCENT, size=12, muted=theme.MUTED))
+        self.download_button.clicked.connect(self._open_download)
+        self.download_button.hide()
+        column.addWidget(self.download_button,
+                         0, Qt.AlignmentFlag.AlignHCenter)
+        self.result_row.hide()
+        layout.addWidget(self.result_row)
+
+        self.checker = updates.UpdateChecker(self)
+        self.checker.finished.connect(self._show_result)
+
     def _open_site(self, _link=None):
         """Ссылка в диалоге: открываем сайт в системном браузере."""
         QDesktopServices.openUrl(QUrl(SITE_URL))
+
+    def _check_updates(self):
+        """Кнопка: один запрос за раз, повторный клик во время него — no-op."""
+        if self.checker.busy:
+            return
+        self.result_label.clear()
+        self.result_row.hide()
+        self.check_button.setEnabled(False)
+        self.check_button.setText(BUSY_TEXT)
+        self.checker.start()
+
+    def _show_result(self, state, found):
+        """Ответ проверки: три состояния, всё в карточке, без диалогов."""
+        self.check_button.setEnabled(True)
+        self.check_button.setText(CHECK_TEXT)
+        if state == updates.NEWER:
+            self.result_label.setText(f"{NEWER_TEXT} <b>{found}</b>")
+            self.result_label.setStyleSheet(
+                f"color: {theme.BG}; font-size: 12px; padding-top: 4px;")
+            self.download_button.show()
+        else:
+            self.result_label.setText(
+                ACTUAL_TEXT if state == updates.ACTUAL else FAIL_TEXT)
+            self.result_label.setStyleSheet(
+                f"color: {theme.GRAY}; font-size: 12px; padding-top: 4px;")
+            self.download_button.hide()
+        self.result_row.show()
+        self.adjustSize()  # карточка выросла на строку результата
+
+    def _open_download(self):
+        """«Скачать»: страница последнего релиза в системном браузере."""
+        QDesktopServices.openUrl(QUrl(updates.RELEASES_URL))
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
