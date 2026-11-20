@@ -1,4 +1,4 @@
-"""«В почту»: письмо с вложением кадра в системном почтовом
+"""«В почту» (ТЗ §3г): письмо с вложением кадра в системном почтовом
 клиенте. pywin32 из белого списка зависимостей заявлен ровно на это.
 
 Два пути, оба локальные:
@@ -27,7 +27,7 @@ class MailUnavailableError(RuntimeError):
 
 
 class MailTimeoutError(MailUnavailableError):
-    """MAPI/COM не ответил за таймаут (зависающий клиент, дефект, найденный на тестировании)."""
+    """MAPI/COM не ответил за таймаут (зависающий клиент, баг 2 dogfooding)."""
 
 
 def _call_with_timeout(func, args, timeout):
@@ -60,7 +60,7 @@ def send_mail(attachment: Path):
     Каждый путь (COM, MAPI) бросает что угодно: com_error при отсутствии
     Outlook, OSError при отсутствии mapi32, результат вызова... Ловим всё —
     иначе необработанное исключение уходило в слот и кнопка «молчала»
-    (дефект 24.10: Outlook не установлен, до Simple MAPI дело не доходило).
+    (баг 24.10: Outlook не установлен, до Simple MAPI дело не доходило).
     """
     if not attachment.exists():
         raise ValueError(f"вложение не найдено: {attachment}")

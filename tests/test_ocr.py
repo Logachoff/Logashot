@@ -1,4 +1,4 @@
-"""P0-тесты OCR: ядро конвертации, выбор языка,
+"""P0-тесты OCR (ТЗ DS-7, версия 0.3.0): ядро конвертации, выбор языка,
 деградация движка, тосты и вес кнопки на обеих панелях.
 
 Живой движок в unit-тестах не нужен: PyWinRT подменяется моками через
@@ -189,7 +189,7 @@ def test_software_bitmap_scales_over_engine_limit(fake_winrt):
     assert fake_winrt.bitmap.calls[-1][2] == ocr.MAX_SIDE
 
 
-# --- подготовка региона: поля и увеличение (репорт 07.11) ----
+# --- подготовка региона: поля и увеличение (репорт владельца 07.11) ----
 
 
 def test_prepare_adds_white_margins_and_upscales():
@@ -341,7 +341,7 @@ def test_ocr_tiny_region_cancelled_silently(overlay):
 
 
 def test_ocr_region_in_pin_window_uses_frame_coords(overlay):
-    """Пин-окно: регион считается в координатах кадра сквозь зум."""
+    """Пин-окно: регион считается в координатах кадра сквозь зум (ТЗ: «то же»)."""
     from pin import PinWindow
 
     window = PinWindow(overlay)

@@ -14,13 +14,18 @@ Win+Shift+S и Alt+PrtScr не трогаем (утверждённый прое
 
 PrtScr ставим не по имени «print screen»: в таблицах keyboard это имя
 раскрывается в scan-коды 84 и 55, а scan 55 — ещё и NumPad-*. Поэтому PrtScr
-ловим низкоуровневым хуком и отсекаем события цифрового блока.
+ловим низкоуровневым хуком и отсекаем события цифрового блока (баг Б2.1).
 Символ «*» с основной клавиатуры — это Shift+8; записываем его физической
 клавишей, чтобы он не пересекался с NumPad-*.
 
 Русская раскладка: имя клавиши берём по Qt-коду (физическая клавиша), а не по
 символу из event.text(); сочетание храним латиницей («alt+z», не «alt+я») —
-иначе при старте с английской раскладкой хук не встаёт.
+иначе при старте с английской раскладкой хук не встаёт (баг Б2.4).
+
+Тихий скриншот всех экранов (DS-9) — второй, независимый хоткей: хуки для
+него строит quiet_hooks_for, сигнал — quiet. Модификаторы сочетания с PrtScr
+сверяются «ровно» (prtscr_hit): Shift+PrtScr уходит тихому захвату и не
+открывает оверлей по одиночному PrtScr.
 """
 
 import keyboard
@@ -65,7 +70,7 @@ for _i in range(1, 13):  # F1..F12
 
 # NumPad-* в keyboard — «num *» (scan 55), а символ «*» на основной клавиатуре
 # печатается как Shift+8. Имя «*» в keyboard раскрывается в оба scan-кода
-# (55 и 9) — так хук на символ ловил NumPad-* — поэтому разводим имена.
+# (55 и 9) — так хук на символ ловил NumPad-* (баг Б2.1), поэтому разводим имена.
 _NUMPAD_KEYS = {
     Qt.Key.Key_Asterisk: ("num *", "Num *"),
 }
@@ -75,7 +80,7 @@ _SHIFTED_KEYS = {  # символы основной клавиатуры: по�
 
 # Раскладка ЙЦУКЕН (Windows): буква кириллицей → имя физической клавиши QWERTY.
 # keyboard строит таблицу имён по активной раскладке на старте, поэтому запись
-# «alt+я» при английской раскладке не разрешается в хук. Имена
+# «alt+я» при английской раскладке не разрешается в хук (баг Б2.4). Имена
 # латинских букв keyboard выводит из виртуального кода клавиши — они есть в
 # любой раскладке, поэтому сочетание храним только ими.
 _RU_LAYOUT = {
@@ -111,7 +116,7 @@ def key_name(key, text="", keypad=False):
         return name, name.upper()
     if 0x0400 <= key <= 0x04FF:
         # буква кириллицей — запись при русской раскладке; берём физическую
-        # клавишу по Qt-коду, а не символ из event.text()
+        # клавишу по Qt-коду, а не символ из event.text() (баг Б2.4)
         name = _RU_LAYOUT.get(chr(key).lower())
         # знаковые клавиши (ж, х, ъ, э, б, ю, ё) стабильного имени в таблицах
         # keyboard не имеют — сочетание не принимаем, иначе хук сломается
@@ -159,8 +164,8 @@ def physical_combo(combo):
     """Сочетание из настроек → имена физических клавиш (кириллица → латиница).
 
     Старые записи, сделанные при русской раскладке («alt+я»), приводим к
-    «alt+z», иначе хук не встанет при старте с английской раскладкой).
-    Служебные имена («print screen», «num *») и латиница не меняются.
+    «alt+z», иначе хук не встанет при старте с английской раскладкой (баг
+    Б2.4). Служебные имена («print screen», «num *») и латиница не меняются.
     """
     return "+".join(
         _RU_LAYOUT.get(part.lower(), part) if len(part) == 1 else part
@@ -186,19 +191,58 @@ def hooks_for(capture_combo, suppress_prtscr):
     return hooks
 
 
+def quiet_hooks_for(quiet_combo):
+    """Хуки тихого скриншота всех экранов (DS-9): [(сочетание, подавлять)].
+
+    Перехватывается ровно записанное сочетание — тумблер «Перехватывать
+    PrtScr у Windows» на тихий хоткей не влияет; системный снимок Windows
+    по этому сочетанию не открывается (Shift+PrtScr у Windows — свой снимок).
+    """
+    return [(quiet_combo, True)]
+
+
+def combo_modifiers(combo):
+    """Модификаторы сочетания в каноническом порядке: «shift+print screen» → («shift»,)."""
+    return tuple(part for part in combo.split("+") if part in _MODIFIER_ORDER)
+
+
+def prtscr_hit(combo, event, pressed):
+    """Сработало ли сочетание с PrtScr у этого события.
+
+    pressed — предикат «клавиша зажата» (keyboard.is_pressed). Модификаторы
+    сверяем по набору «ровно» — как у keyboard.add_hotkey: Shift+PrtScr не
+    запускает захват по одиночному PrtScr, а уходит тихому сочетанию (DS-9).
+    """
+    if not is_prtscr_event(event.scan_code, event.is_keypad):
+        return False
+    required = set(combo_modifiers(combo))
+    held = {name for name in _MODIFIER_ORDER if pressed(name)}
+    return required == held
+
+
+def taken_by(combo, capture_combo, quiet_combo):
+    """Кем занято сочетание: «capture» | «quiet» | None (DS-9: дубли запрещены)."""
+    if combo == capture_combo:
+        return "capture"
+    if combo == quiet_combo:
+        return "quiet"
+    return None
+
+
 def is_prtscr_event(scan_code, is_keypad):
     """Настоящий PrtScr: scan 55 без признака цифрового блока.
 
     NumPad-* тоже даёт scan 55, но keyboard помечает его is_keypad=True;
-    нажатие NumPad-* не должно запускать захват.
+    нажатие NumPad-* не должно запускать захват (баг Б2.1).
     """
     return scan_code == PRTSCR_SCAN_CODE and not is_keypad
 
 
 class HotkeyListener(QObject):
-    """Слушает хоткей захвата глобально и испускает Qt-сигнал triggered."""
+    """Слушает хоткеи глобально и испускает Qt-сигналы triggered / quiet."""
 
-    triggered = Signal()
+    triggered = Signal()  # захват с выделением области
+    quiet = Signal()  # тихий скриншот всех экранов (DS-9)
 
     def start(self):
         self.reload()
@@ -208,19 +252,30 @@ class HotkeyListener(QObject):
         keyboard.unhook_all()
         for combo, suppress in hooks_for(settings.capture_hotkey(),
                                          settings.suppress_prtscr()):
-            if combo == PRTSCR_COMBO:
-                # Имя «print screen» в keyboard ловит и NumPad-* (общий scan 55),
-                # поэтому ставим свой хук и отсекаем события цифрового блока.
-                keyboard.hook(self._on_prtscr_event, suppress=suppress)
-            else:
-                keyboard.add_hotkey(combo, self.triggered.emit, suppress=suppress)
+            self._install(combo, suppress, self.triggered.emit)
+        for combo, suppress in quiet_hooks_for(settings.quiet_hotkey()):
+            self._install(combo, suppress, self.quiet.emit)
 
-    def _on_prtscr_event(self, event):
-        """Всё пропускаем; настоящий PrtScr запускает захват."""
-        if event.event_type != keyboard.KEY_DOWN or not is_prtscr_event(
-                event.scan_code, event.is_keypad):
+    def _install(self, combo, suppress, action):
+        """Своё сочетание — add_hotkey, любое с PrtScr — низкоуровневый хук.
+
+        Имя «print screen» в таблицах keyboard раскрывается ещё и в scan 55
+        (NumPad-*), поэтому сочетания с PrtScr ловим своим хуком и сверяем
+        scan-код с модификаторами (баг Б2.1, DS-9).
+        """
+        if PRTSCR_COMBO in combo.split("+"):
+            keyboard.hook(
+                lambda event: self._on_prtscr_event(event, combo, action),
+                suppress=suppress)
+        else:
+            keyboard.add_hotkey(combo, action, suppress=suppress)
+
+    def _on_prtscr_event(self, event, combo, action):
+        """Всё пропускаем; PrtScr с модификаторами своего сочетания — запуск."""
+        if event.event_type != keyboard.KEY_DOWN or not prtscr_hit(
+                combo, event, keyboard.is_pressed):
             return True
-        self.triggered.emit()
+        action()
         return False  # при suppress=True системный снимок не открывается
 
     def stop(self):

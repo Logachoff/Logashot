@@ -6,12 +6,12 @@ Esc — отмена по уровням. Геометрия рамки — в g
 
 Аннотации, инструменты, undo/redo, попапы и золотой путь (Enter/Ctrl+C/
 Ctrl+S/Ctrl+O/Ctrl+M) — в базовом классе canvas.AnnotationCanvas, общем
-с пин-окном (редактируемость не замораживается в пине). Здесь —
+с пин-окном (ТЗ п.3: редактируемость не замораживается в пине). Здесь —
 специфика оверлея: затемнение, рамка выделения с ручками, панель у
 выделения, режим «по Ctrl», fade-жизненный цикл, разовая подсказка
-у кнопки «Пин» (заметность пина, решение 24.10).
+у кнопки «Пин» (заметность пина, решение владельца 24.10).
 
-Кнопка «Пин» — переключатель: оверлей прячется, состояние
+Кнопка «Пин» — переключатель (ТЗ п.3): оверлей прячется, состояние
 (кадр, рамка, аннотации, история) уходит в пин-окно; возврат — через
 restore_from с тем же состоянием.
 """
@@ -29,7 +29,6 @@ from PySide6.QtCore import (
 from PySide6.QtGui import (
     QColor,
     QGuiApplication,
-    QImage,
     QPainter,
     QPen,
     QPixmap,
@@ -38,6 +37,8 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel
 
 import geometry
 import panel_layout
+import perf
+import screengrab
 import settings
 import theme
 import watermark
@@ -93,7 +94,7 @@ def _force_foreground(widget):
     """Windows: дать окну фокус ввода, чтобы Esc срабатывал после Alt+N.
 
     Qt.activateWindow() иногда не справляется, когда окно показано из
-    глобального хука (дефект, найденный на тестировании); SetForegroundWindow надёжнее.
+    глобального хука (баг 16 dogfooding); SetForegroundWindow надёжнее.
     """
     try:
         hwnd = int(widget.winId())
@@ -101,6 +102,7 @@ def _force_foreground(widget):
         ctypes.windll.user32.SetFocus(hwnd)
     except (AttributeError, OSError, ValueError):
         pass  # fail-soft: окна может не быть в момент вызова
+
 
 # Режимы драга специфики оверлея (объектные 0..6 — в canvas.py)
 _DRAG_DRAW = 10     # тянем новое выделение
@@ -112,7 +114,8 @@ class CaptureOverlay(AnnotationCanvas):
     """Оверлей на все мониторы; один кадр захвата — одно появление."""
 
     cancelled = Signal()  # пользователь нажал Esc
-    pinned = Signal()  # кнопка «Пин»: оверлей спрятался, пора открыть пин-окно
+    pinned = Signal()  # кнопка «Пин»: оверлей спрятался, пора показать пин-окно
+    pin_started = Signal()  # «Пин» нажат: оверлей гаснет, окно можно собирать
 
     def __init__(self):
         super().__init__()
@@ -121,6 +124,12 @@ class CaptureOverlay(AnnotationCanvas):
             | Qt.WindowType.WindowStaysOnTopHint
             | Qt.WindowType.Tool  # без значка на панели задач
         )
+        # тултипы Qt показывает только активному окну. Оверлей — topmost
+        # tool-окно: фокус ему отдаётся через SetForegroundWindow, но после
+        # любого диалога и на части систем активации нет — подсказки кнопок
+        # молча пропадали (З4.1, «то есть, то нет»). ВАЖНО: атрибут ставится
+        # на ОКНО, а не на кнопку с тултипом (док. Qt, свойство toolTip).
+        self.setAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips)
         self.setCursor(Qt.CursorShape.CrossCursor)
 
         self._screen = (0, 0, 1, 1)  # экран в локальных координатах виджета
@@ -133,7 +142,7 @@ class CaptureOverlay(AnnotationCanvas):
         self._fade.finished.connect(self._on_fade_finished)
         self._closing = False  # False | "cancel" | "pin" — куда идёт fade
 
-        # Панель инструментов у выделения
+        # Панель инструментов у выделения (ТЗ §3г)
         self._panel = ToolbarPanel(self)
         self._panel.triggered.connect(self._on_panel_action)
         self._panel.hide()
@@ -192,7 +201,7 @@ class CaptureOverlay(AnnotationCanvas):
         self.hide()
         self.setWindowOpacity(1.0)
         if mode == "pin":
-            self.pinned.emit()  # оверлей полностью закрывается
+            self.pinned.emit()  # ТЗ п.3: оверлей полностью закрывается
         else:
             self.cancelled.emit()
 
@@ -203,52 +212,12 @@ class CaptureOverlay(AnnotationCanvas):
         painter = QPainter(result)
         for screen in QGuiApplication.screens():
             pm = screen.grabWindow(0)
-            if self._is_black(pm):  # RDP: Qt-путь иногда даёт чёрный кадр
-                pm = self._grab_screen_gdi(screen.geometry())
+            if screengrab.mono(pm):  # RDP: Qt-путь иногда даёт чёрный кадр
+                pm = QPixmap.fromImage(screengrab.grab_gdi(screen.geometry()))
             target = QRect(screen.geometry().topLeft() - vg.topLeft(), screen.geometry().size())
             painter.drawPixmap(target, pm)
         painter.end()
         return result
-
-    @staticmethod
-    def _is_black(pm):
-        """Кадр целиком одного цвета (обычно чёрного) — признак сбоя захвата
-        под RDP (дефект, найденный на тестировании)."""
-        if pm.isNull():
-            return True
-        img = pm.toImage()
-        if img.width() < 2 or img.height() < 2:
-            return True
-        first = img.pixelColor(0, 0)
-        # пробы по углам и центру: монохромный кадр = сбой
-        for x, y in ((img.width() - 1, 0), (0, img.height() - 1),
-                     (img.width() - 1, img.height() - 1),
-                     (img.width() // 2, img.height() // 2)):
-            if img.pixelColor(x, y) != first:
-                return False
-        return True
-
-    def _grab_screen_gdi(self, geom):
-        """Запасной захват через GDI BitBlt — под RDP Qt-путь даёт чёрный кадр,
-        а BitBlt через DC экрана обычно работает."""
-        user32 = ctypes.windll.user32
-        gdi32 = ctypes.windll.gdi32
-        w, h = geom.width(), geom.height()
-        screen_dc = user32.GetDC(0)
-        mem_dc = gdi32.CreateCompatibleDC(screen_dc)
-        bmp = gdi32.CreateCompatibleBitmap(screen_dc, w, h)
-        gdi32.SelectObject(mem_dc, bmp)
-        SRCCOPY = 0x00CC0020
-        gdi32.BitBlt(mem_dc, 0, 0, w, h, screen_dc, geom.x(), geom.y(), SRCCOPY)
-        img = QImage(w, h, QImage.Format.Format_RGB32)
-        import struct  # локально, как в blur.py
-        bi_size = 40
-        bi = struct.pack("<IiiHHIIiiII", bi_size, w, -h, 1, 32, 0, 0, 0, 0, 0, 0)
-        gdi32.GetDIBits(mem_dc, bmp, 0, h, int(img.bits()), bi, 0)
-        user32.ReleaseDC(0, screen_dc)
-        gdi32.DeleteObject(bmp)
-        gdi32.DeleteDC(mem_dc)
-        return QPixmap.fromImage(img)
 
     def _active_screen_for(self, rect):
         """Монитор, содержащий центр выделения (rect — в координатах кадра);
@@ -275,7 +244,7 @@ class CaptureOverlay(AnnotationCanvas):
 
     def _fit_to_active_screen(self):
         """После появления выделения оставить затемнение только на том мониторе,
-        где оно создано; остальные мониторы возвращаются в работу.
+        где оно создано; остальные мониторы возвращаются в работу (баг 9).
 
         Геометрия окна меняется, а координаты кадра остаются нетронутыми —
         маппинг локальных координат в координаты кадра учитывает смещение."""
@@ -291,17 +260,21 @@ class CaptureOverlay(AnnotationCanvas):
         self._place_panel()
         self.update()
 
-    # --- пин-переключатель ---
+    # --- пин-переключатель (ТЗ п.3) ---
 
     def _pin_action(self):
         """Кнопка «Пин»: оверлей закрывается, состояние уйдёт в пин-окно."""
         if self._selection is None:
             return
+        perf.mark("pin_click")
         self._close_popups()
         self._closing = "pin"  # fade на закрытие, но без сигнала cancelled
         self._fade.stop()
         self._fade.setStartValue(self.windowOpacity())
         self._fade.setEndValue(0.0)
+        # пин-окно собирается, пока оверлей гаснет (180 мс): сборка не
+        # добавляется к переходу, а идёт параллельно анимации (З4.4)
+        self.pin_started.emit()
         self._fade.start()
 
     def restore_from(self, pin):
@@ -428,7 +401,9 @@ class CaptureOverlay(AnnotationCanvas):
 
     def _chrome_drag_release(self, mode, pos):
         if mode == _DRAG_DRAW and self._selection is not None:
+            perf.mark("release_chrome")
             self._fit_to_active_screen()
+            perf.mark("fit_screen")
             if settings.panel_mode() == settings.MODE_IMMEDIATE:
                 self._show_panel()  # режим «Сразу»: панель после отпускания
         elif self._selection is not None:
@@ -444,6 +419,18 @@ class CaptureOverlay(AnnotationCanvas):
             self.setCursor(HANDLE_CURSORS[handle])
             return True
         return False
+
+    # --- «Открыть папку»: захват закрывается (З4.2) ---
+
+    def _exit_before_folder(self):
+        """Проводник — обычное окно, а оверлей topmost на весь экран: папку
+        видно, только если захват закрыт. Поднять чужое окно над topmost
+        платформа не даёт (замер протокола: SetWindowPos по окну проводника
+        возвращает успех и порядок окон не меняет), поэтому «Открыть папку»
+        штатно выходит из захвата — как Enter после сохранения.
+        Пин-окно маленькое, папку не перекрывает — там выхода нет (база).
+        """
+        self._finish()
 
     # --- клавиатура: режим «по Ctrl» (настройки) ---
 
@@ -462,14 +449,17 @@ class CaptureOverlay(AnnotationCanvas):
     # --- панель инструментов у выделения ---
 
     def _show_panel(self):
-        """Показать панель с микроанимацией."""
+        """Показать панель с микроанимацией (ТЗ §3: 150–250 мс, ease-out)."""
         if self._selection is None:
             return
+        perf.mark("panel_adjust")
         self._panel.adjustSize()
         self._panel.show()
         self._panel.raise_()
+        perf.mark("panel_show")
         self._place_panel()
         self._maybe_show_pin_bubble()
+        perf.mark("panel_bubble")
         effect = QGraphicsOpacityEffect(self._panel)
         self._panel.setGraphicsEffect(effect)
         if self._panel_fade is not None:
@@ -480,6 +470,7 @@ class CaptureOverlay(AnnotationCanvas):
         self._panel_fade.setStartValue(0.0)
         self._panel_fade.setEndValue(1.0)
         self._panel_fade.start()
+        perf.mark("panel_fade_start")
 
     def _hide_panel(self):
         self._close_popups()
@@ -528,11 +519,12 @@ class CaptureOverlay(AnnotationCanvas):
     # --- отрисовка ---
 
     def paintEvent(self, event):
+        perf.mark("paint_begin")
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         # Кадр и все аннотации рисуем в координатах кадра (как до введения
         # обрезки по монитору); трансформ сдвигает их под текущую геометрию
-        # окна — так оверлей можно обрезать до одного монитора.
+        # окна — так оверлей можно обрезать до одного монитора (баг 9).
         gx, gy = self.geometry().x(), self.geometry().y()
         ox, oy = self._snapshot_origin.x(), self._snapshot_origin.y()
         painter.translate(ox - gx, oy - gy)
@@ -570,6 +562,7 @@ class CaptureOverlay(AnnotationCanvas):
         if settings.watermark_enabled() and watermark.fits(w, h):
             watermark.draw(painter, (x, y, w, h))
         painter.end()
+        perf.mark("paint_end")
 
     def _paint_handles(self, painter):
         painter.setPen(QPen(QColor(theme.NAVY), 1))

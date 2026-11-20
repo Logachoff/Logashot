@@ -1,12 +1,13 @@
-"""Тост уведомления: тёмная плашка с текстом и опциональным
+"""Тост уведомления (ТЗ §3г): тёмная плашка с текстом и опциональным
 inline-действием («Открыть папку»).
 
 Тост — отдельное окно поверх всех: переживает закрытие оверлея (Enter →
 тост «готово» уже после выхода из режима захвата). Позицию считает
 panel_layout.toast_place — тост никогда не накрывает панель. Сам появляется
-и гаснет с микроанимацией 180 мс ease-out.
+и гаснет с микроанимацией 180 мс ease-out (ТЗ §3: 150–250 мс).
 Тексты — по гайду тона продукта.
-`show_launch()` — тот же тост, но привязанный к иконке трея, а не к панели.
+`show_launch()` — тот же тост, но привязанный к иконке трея, а не к панели
+(З3.3: «LogaShot запущен» на каждом старте).
 """
 
 from PySide6.QtCore import Qt, QTimer, Signal
@@ -26,7 +27,7 @@ class Toast(QFrame):
 
     action_clicked = Signal()  # нажали inline-действие
 
-    def __init__(self, text, action_text=None):
+    def __init__(self, text, action_text=None, duration_ms=_SHOW_MS):
         super().__init__(
             None,
             Qt.WindowType.FramelessWindowHint
@@ -56,13 +57,14 @@ class Toast(QFrame):
             layout.addWidget(link)
 
         self._anim = None  # текущая анимация fade (удерживаем ссылку)
+        self._duration_ms = duration_ms  # сколько висит до fade-out
         self._timer = QTimer(self)
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._fade_out)
 
     def show(self):
         super().show()
-        self._timer.start(_SHOW_MS)
+        self._timer.start(self._duration_ms)
         self._anim = animations.fade_widget(self, 0.0, 1.0)
 
     def paintEvent(self, event):
@@ -114,14 +116,15 @@ def _anchor_rect(anchor, screen):
             _CORNER_ANCHOR, _CORNER_ANCHOR)
 
 
-def show_launch(text, anchor):
-    """Тост о запуске у иконки трея: тот же Toast, без панели.
+def show_launch(text, anchor, duration_ms=_SHOW_MS):
+    """Тост о запуске у иконки трея (З3.3): тот же Toast, без панели.
 
     Возвращает тост — ссылку держит вызывающий, иначе Qt соберёт окно
     сборщиком мусора. Позиция — по правилам panel_layout.toast_place:
-    над иконкой трея, с клампом в экран.
+    над иконкой трея, с клампом в экран. duration_ms — время до исчезновения
+    (тихий захват всех экранов — ~2 с, DS-9).
     """
-    toast = Toast(text)
+    toast = Toast(text, duration_ms=duration_ms)
     toast.adjustSize()
     screen = _screen_rect(anchor)
     toast.move(*panel_layout.toast_place(

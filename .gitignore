@@ -22,3 +22,14 @@ desktop.ini
 
 # Превью иконки
 /dev/icon_preview.png
+
+# Дев-харнессы прогонов (в репозиторий не входят)
+dev/demo_*.py
+dev/probe_*.py
+dev/*_probe.py
+dev/shot_ds*.py
+harness/
+_stand/
+
+# Снимки экрана и отчёты прогонов
+shots/

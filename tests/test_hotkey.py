@@ -3,8 +3,8 @@
 
 Логика хуков — чистая функция hotkey.hooks_for (без библиотеки keyboard);
 пересоздание проверяем с моком keyboard.add_hotkey/hook/unhook_all.
-NumPad-* и символ «*» — разные клавиши (scan 55 против Shift+8).
-сочетание, записанное при русской раскладке, хранится по физической
+Б2.1: NumPad-* и символ «*» — разные клавиши (scan 55 против Shift+8).
+Б2.4: сочетание, записанное при русской раскладке, хранится по физической
 клавише (кириллица → латиница), подпись — латиницей.
 """
 
@@ -61,7 +61,7 @@ def test_print_screen():
     assert combo == "alt+print screen"
 
 
-# --- NumPad-* и символ «*» — разные клавиши ---
+# --- Б2.1: NumPad-* и символ «*» — разные клавиши ---
 
 
 def _scan_codes(combo):
@@ -113,7 +113,7 @@ def test_combo_label_human_readable():
     assert combo_label("space") == "Space"
 
 
-# --- запись сочетания при русской раскладке ---
+# --- Б2.4: запись сочетания при русской раскладке ---
 
 
 def _ru_key(letter):
@@ -211,13 +211,20 @@ def test_reload_recreates_hooks(portable_settings, monkeypatch):
     monkeypatch.setattr(hotkey.keyboard, "unhook_all", lambda: calls.clear())
 
     listener = hotkey.HotkeyListener()
-    listener.reload()  # дефолт: PrtScr, тумблер включён — свой хук, не add_hotkey
-    assert [(kind, suppress) for kind, _, suppress in calls] == [("hook", True)]
+    listener.reload()  # дефолт: PrtScr + тихий Shift+PrtScr — два своих хука
+    assert [(kind, suppress) for kind, _, suppress in calls] == [
+        ("hook", True),  # захват
+        ("hook", True),  # тихий скриншот всех экранов (DS-9)
+    ]
 
     s.set_capture_hotkey("ctrl+alt+x")
     s.set_suppress_prtscr(False)
     listener.reload()  # сменили сочетание и выключили тумблер — без перезапуска
-    assert calls == [("hotkey", "ctrl+alt+x", True)]
+    assert [(kind, suppress) for kind, _, suppress in calls] == [
+        ("hotkey", True),  # своё сочетание через add_hotkey
+        ("hook", True),  # тихий хоткей живёт всегда
+    ]
+    assert calls[0][1] == "ctrl+alt+x"
 
 
 def test_prtscr_hook_ignores_numpad_asterisk(portable_settings, monkeypatch):
@@ -276,7 +283,7 @@ def test_empty_hotkey_rejected(portable_settings):
 
 
 def test_legacy_cyrillic_hotkey_is_migrated(portable_settings):
-    # в реестре запись сделана при русской раскладке
+    # у владельца в реестре запись сделана при русской раскладке (Б2.4)
     s.set_capture_hotkey("alt+я")
     assert s.capture_hotkey() == "alt+z"
     assert hotkey.combo_label(s.capture_hotkey()) == "Alt+Z"  # подпись латиницей

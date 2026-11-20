@@ -36,14 +36,19 @@ def test_tray_menu_has_settings_between(app):
     icon = tray.TrayIcon(QIcon(), on_capture=lambda: calls.append("capture"),
                          on_settings=lambda: calls.append("settings"),
                          on_quit=lambda: calls.append("quit"),
-                         on_about=lambda: calls.append("about"))
+                         on_about=lambda: calls.append("about"),
+                         on_save_all=lambda: calls.append("save_all"))
     actions = icon.contextMenu().actions()
-    # порядок v0.2: «О программе» — после «Настроек», перед «Выходом»
+    # порядок v0.2 + DS-9: «О программе» — после «Настроек», перед «Выходом»;
+    # «Сохранить все экраны» — сразу за «Снять скриншот»
     assert [a.text() for a in actions if not a.isSeparator()] == [
-        "Снять скриншот", "Настройки", "О программе", "Выход"]
+        "Снять скриншот", "Сохранить все экраны", "Настройки", "О программе",
+        "Выход"]
     next(a for a in actions if a.text() == "Настройки").trigger()
     next(a for a in actions if a.text() == "О программе").trigger()
-    assert calls == ["settings", "about"]  # окна без запуска захвата
+    next(a for a in actions if a.text() == "Сохранить все экраны").trigger()
+    assert calls == ["settings", "about", "save_all"]  # окна без запуска захвата
+    assert "capture" not in calls  # тихий пункт не открывает оверлей
 
 
 def test_settings_window_applies_values_live(app, portable, monkeypatch):

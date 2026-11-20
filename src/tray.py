@@ -15,13 +15,15 @@ import settings
 class TrayIcon(QSystemTrayIcon):
     """Трей: ЛКМ = захват (как PrtScr), ПКМ = меню.
 
-    Порядок меню (Д1 + v0.2): «Снять скриншот» → «Настройки» → «О программе»
-    → «Выход». «Настройки» открывает то же окно, что шестерёнка на панели,
-    без захвата; «О программе» — компактный диалог (план 27.10).
+    Порядок меню (Д1 + v0.2 + DS-9): «Снять скриншот» → «Сохранить все
+    экраны» → «Настройки» → «О программе» → «Выход». «Сохранить все экраны» —
+    тихий захват без оверлея (та же механика, что хоткей Shift+PrtScr);
+    «Настройки» открывает то же окно, что шестерёнка на панели, без захвата;
+    «О программе» — компактный диалог (план 27.10).
     """
 
     def __init__(self, icon: QIcon, on_capture, on_settings, on_quit,
-                 on_about=None, parent=None):
+                 on_about=None, on_save_all=None, parent=None):
         super().__init__(icon, parent)
         self.setToolTip("LogaShot")
         self._on_capture = on_capture
@@ -30,6 +32,8 @@ class TrayIcon(QSystemTrayIcon):
         menu = QMenu()
         capture_action = menu.addAction("Снять скриншот")
         capture_action.triggered.connect(on_capture)
+        save_all_action = menu.addAction("Сохранить все экраны")
+        save_all_action.triggered.connect(on_save_all or on_capture)
         settings_action = menu.addAction("Настройки")
         settings_action.triggered.connect(on_settings)
         about_action = menu.addAction("О программе")
@@ -48,6 +52,12 @@ class TrayIcon(QSystemTrayIcon):
 def _apply_hotkey(combo):
     """Новое сочетание: сохраняем и пересоздаём хуки без перезапуска."""
     settings.set_capture_hotkey(combo)
+    hotkey.get_listener().reload()
+
+
+def _apply_quiet_hotkey(combo):
+    """Новое сочетание тихого захвата: сохраняем и пересоздаём хуки (DS-9)."""
+    settings.set_quiet_hotkey(combo)
     hotkey.get_listener().reload()
 
 
@@ -71,10 +81,11 @@ def _apply_autostart(enabled):
 
 
 def _fill_settings_window(win):
-    """Тумблеры и подпись хоткея — из сохранённых настроек."""
+    """Тумблеры и подписи хоткеев — из сохранённых настроек."""
     win.set_mode(settings.panel_mode())
     win.set_watermark(settings.watermark_enabled())
     win.set_hotkey_label(hotkey.combo_label(settings.capture_hotkey()))
+    win.set_quiet_hotkey_label(hotkey.combo_label(settings.quiet_hotkey()))
     win.set_suppress_prtscr(settings.suppress_prtscr())
     win.set_autostart(settings.autostart_enabled())
 
@@ -86,6 +97,7 @@ def create_settings_window():
     win.mode_chosen.connect(settings.set_panel_mode)
     win.watermark_toggled.connect(settings.set_watermark_enabled)
     win.hotkey_chosen.connect(_apply_hotkey)
+    win.quiet_hotkey_chosen.connect(_apply_quiet_hotkey)
     win.suppress_toggled.connect(_apply_suppress)
     win.autostart_toggled.connect(_apply_autostart)
     return win

@@ -1,6 +1,6 @@
-"""Диалог «О программе» (план 27.10): минимум по традиции.
+"""Диалог «О программе» (план владельца 27.10): минимум по традиции.
 
-Монограмма L из брендовой графики (icons.py — единственный источник графики),
+Монограмма L из бренд-пакета (icons.py — единственный источник графики),
 название, версия из version.py, автор и кликабельная ссылка на сайт.
 Фон — тёмный NAVY, как у пин-окна; только токены темы, новых цветов нет.
 Закрытие — крестик или Esc. Открывается пунктом меню трея «О программе»;
@@ -23,7 +23,7 @@ import icons
 import theme
 import version
 
-SITE_URL = "https://logachoff.ru/"  # проверено 27.10
+SITE_URL = "https://logachoff.ru/"  # подтверждён владельцем 27.10
 AUTHOR = "Сергей Логачев"
 TITLE = "LogaShot"
 
@@ -40,6 +40,9 @@ class AboutDialog(QWidget):
             Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint,
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        # тултип крестика: Qt показывает подсказки только активному окну, а
+        # диалог открывается поверх оверлея и активацию забирает сам (З4.1)
+        self.setAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips)
         self.setWindowTitle("О программе")
         self.setFixedWidth(self._WIDTH)
 

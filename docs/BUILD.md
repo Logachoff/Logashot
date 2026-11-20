@@ -34,7 +34,7 @@ python dev\build.py
 5. делает смоук-проверку: запускает exe на 4 секунды и читает `%TEMP%\LogaShot_startup.log`
    (строка вида `0.132	tray=1	ok`). Иконка трея не подтвердилась — сборка считается неудачной.
 
-Результат: `dist\LogaShot\LogaShot.exe` (portable-версия, ~55 МБ на диске).
+Результат: `dist\LogaShot\LogaShot.exe` (portable-версия, ~57 МБ на диске).
 
 Смоук можно пропустить: `set LOGA_SKIP_SMOKE=1` перед запуском. Нужно, когда у вас
 установлена рабочая версия — запуск exe синхронизирует ключ автозагрузки в `HKCU\...\Run`.
@@ -65,7 +65,7 @@ pyinstaller LogaShot.spec
 Бесшумная установка:
 
 ```cmd
-LogaShot_0.3.0_setup.exe /VERYSILENT /NORESTART
+LogaShot_0.3.2_setup.exe /VERYSILENT /NORESTART
 ```
 
 ## 3. Обновление версии
