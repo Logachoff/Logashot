@@ -1,4 +1,4 @@
-"""Захват кадра монитора: Qt-путь + GDI-фолбэк (сессия 7, баг 15 dogfooding).
+"""Захват кадра монитора: Qt-путь + GDI-фолбэк.
 
 Под RDP (и на части удалённых сессий) `QScreen.grabWindow` отдаёт чёрный
 кадр — тогда снимаем через GDI BitBlt по DC экрана. Оба хелпера раньше
@@ -6,7 +6,7 @@
 поэтому код вынесен в общий модуль — реализация одна на два пути.
 
 Кадр монитора отдаётся QImage в физических пикселях: он же уходит и в файл
-тихого захвата (Per-Monitor V2, DS-9).
+тихого захвата (Per-Monitor V2).
 """
 
 import ctypes
@@ -23,7 +23,7 @@ def as_image(frame):
 
 def mono(frame):
     """Кадр целиком одного цвета (обычно чёрного) — признак сбоя захвата
-    под RDP (баг 15 dogfooding)."""
+    под RDP."""
     img = as_image(frame)
     if img.isNull():
         return True
@@ -43,7 +43,7 @@ def _image_data(img):
     """Адрес пиксельных данных QImage для Win32: PySide6 отдаёт memoryview.
 
     Раньше здесь стоял int(img.bits()) — на memoryview (PySide6 6.12) это
-    ValueError, то есть GDI-фолбэк падал вместо кадра (найдено в DS-9).
+    ValueError, то есть GDI-фолбэк падал вместо кадра.
     """
     view = img.bits()
     if isinstance(view, memoryview):

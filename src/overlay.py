@@ -6,12 +6,12 @@ Esc — отмена по уровням. Геометрия рамки — в g
 
 Аннотации, инструменты, undo/redo, попапы и золотой путь (Enter/Ctrl+C/
 Ctrl+S/Ctrl+O/Ctrl+M) — в базовом классе canvas.AnnotationCanvas, общем
-с пин-окном (ТЗ п.3: редактируемость не замораживается в пине). Здесь —
+с пин-окном (редактируемость не замораживается в пине). Здесь —
 специфика оверлея: затемнение, рамка выделения с ручками, панель у
 выделения, режим «по Ctrl», fade-жизненный цикл, разовая подсказка
-у кнопки «Пин» (заметность пина, решение владельца 24.10).
+у кнопки «Пин» (заметность пина).
 
-Кнопка «Пин» — переключатель (ТЗ п.3): оверлей прячется, состояние
+Кнопка «Пин» — переключатель: оверлей прячется, состояние
 (кадр, рамка, аннотации, история) уходит в пин-окно; возврат — через
 restore_from с тем же состоянием.
 """
@@ -57,7 +57,7 @@ _DIM_ALPHA = 120  # прозрачность затемнения (0 — нет,
 
 
 class _PinBubble(QLabel):
-    """Разовая подсказка у кнопки «Пин» (мок v2.13, решение 24.10:
+    """Разовая подсказка у кнопки «Пин» (решение 24.10:
     заметность пина). Акцентная плашка с хвостиком слева снизу.
 
     Клики проходят сквозь (WA_TransparentForMouseEvents) — не мешает
@@ -94,7 +94,7 @@ def _force_foreground(widget):
     """Windows: дать окну фокус ввода, чтобы Esc срабатывал после Alt+N.
 
     Qt.activateWindow() иногда не справляется, когда окно показано из
-    глобального хука (баг 16 dogfooding); SetForegroundWindow надёжнее.
+    глобального хука; SetForegroundWindow надёжнее.
     """
     try:
         hwnd = int(widget.winId())
@@ -127,7 +127,7 @@ class CaptureOverlay(AnnotationCanvas):
         # тултипы Qt показывает только активному окну. Оверлей — topmost
         # tool-окно: фокус ему отдаётся через SetForegroundWindow, но после
         # любого диалога и на части систем активации нет — подсказки кнопок
-        # молча пропадали (З4.1, «то есть, то нет»). ВАЖНО: атрибут ставится
+        # молча пропадали — «то есть, то нет». ВАЖНО: атрибут ставится
         # на ОКНО, а не на кнопку с тултипом (док. Qt, свойство toolTip).
         self.setAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips)
         self.setCursor(Qt.CursorShape.CrossCursor)
@@ -142,7 +142,7 @@ class CaptureOverlay(AnnotationCanvas):
         self._fade.finished.connect(self._on_fade_finished)
         self._closing = False  # False | "cancel" | "pin" — куда идёт fade
 
-        # Панель инструментов у выделения (ТЗ §3г)
+        # Панель инструментов у выделения
         self._panel = ToolbarPanel(self)
         self._panel.triggered.connect(self._on_panel_action)
         self._panel.hide()
@@ -201,7 +201,7 @@ class CaptureOverlay(AnnotationCanvas):
         self.hide()
         self.setWindowOpacity(1.0)
         if mode == "pin":
-            self.pinned.emit()  # ТЗ п.3: оверлей полностью закрывается
+            self.pinned.emit()  # оверлей полностью закрывается
         else:
             self.cancelled.emit()
 
@@ -244,7 +244,7 @@ class CaptureOverlay(AnnotationCanvas):
 
     def _fit_to_active_screen(self):
         """После появления выделения оставить затемнение только на том мониторе,
-        где оно создано; остальные мониторы возвращаются в работу (баг 9).
+        где оно создано; остальные мониторы возвращаются в работу.
 
         Геометрия окна меняется, а координаты кадра остаются нетронутыми —
         маппинг локальных координат в координаты кадра учитывает смещение."""
@@ -260,7 +260,7 @@ class CaptureOverlay(AnnotationCanvas):
         self._place_panel()
         self.update()
 
-    # --- пин-переключатель (ТЗ п.3) ---
+    # --- пин-переключатель ---
 
     def _pin_action(self):
         """Кнопка «Пин»: оверлей закрывается, состояние уйдёт в пин-окно."""
@@ -273,7 +273,7 @@ class CaptureOverlay(AnnotationCanvas):
         self._fade.setStartValue(self.windowOpacity())
         self._fade.setEndValue(0.0)
         # пин-окно собирается, пока оверлей гаснет (180 мс): сборка не
-        # добавляется к переходу, а идёт параллельно анимации (З4.4)
+        # добавляется к переходу, а идёт параллельно анимации
         self.pin_started.emit()
         self._fade.start()
 
@@ -420,7 +420,7 @@ class CaptureOverlay(AnnotationCanvas):
             return True
         return False
 
-    # --- «Открыть папку»: захват закрывается (З4.2) ---
+    # --- «Открыть папку»: захват закрывается ---
 
     def _exit_before_folder(self):
         """Проводник — обычное окно, а оверлей topmost на весь экран: папку
@@ -449,7 +449,7 @@ class CaptureOverlay(AnnotationCanvas):
     # --- панель инструментов у выделения ---
 
     def _show_panel(self):
-        """Показать панель с микроанимацией (ТЗ §3: 150–250 мс, ease-out)."""
+        """Показать панель с микроанимацией (150–250 мс, ease-out)."""
         if self._selection is None:
             return
         perf.mark("panel_adjust")
@@ -524,7 +524,7 @@ class CaptureOverlay(AnnotationCanvas):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         # Кадр и все аннотации рисуем в координатах кадра (как до введения
         # обрезки по монитору); трансформ сдвигает их под текущую геометрию
-        # окна — так оверлей можно обрезать до одного монитора (баг 9).
+        # окна — так оверлей можно обрезать до одного монитора.
         gx, gy = self.geometry().x(), self.geometry().y()
         ox, oy = self._snapshot_origin.x(), self._snapshot_origin.y()
         painter.translate(ox - gx, oy - gy)

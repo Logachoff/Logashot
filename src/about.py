@@ -1,4 +1,4 @@
-"""Диалог «О программе» (план владельца 27.10): минимум по традиции.
+"""Диалог «О программе»: минимум по традиции.
 
 Монограмма L из бренд-пакета (icons.py — единственный источник графики),
 название, версия из version.py, автор и кликабельная ссылка на сайт.
@@ -23,7 +23,7 @@ import icons
 import theme
 import version
 
-SITE_URL = "https://logachoff.ru/"  # подтверждён владельцем 27.10
+SITE_URL = "https://logachoff.ru/"  # сайт автора
 AUTHOR = "Сергей Логачев"
 TITLE = "LogaShot"
 
@@ -41,7 +41,7 @@ class AboutDialog(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         # тултип крестика: Qt показывает подсказки только активному окну, а
-        # диалог открывается поверх оверлея и активацию забирает сам (З4.1)
+        # диалог открывается поверх оверлея и активацию забирает сам
         self.setAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips)
         self.setWindowTitle("О программе")
         self.setFixedWidth(self._WIDTH)

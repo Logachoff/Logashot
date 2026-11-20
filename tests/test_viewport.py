@@ -1,4 +1,4 @@
-"""P0-тесты чистого ядра вьюпорта пин-окна (viewport.py, ТЗ §3а/п.3)."""
+"""P0-тесты чистого ядра вьюпорта пин-окна (viewport.py)."""
 
 import sys
 from pathlib import Path
@@ -40,7 +40,7 @@ class TestCenterOn:
 
 
 class TestInitialView:
-    FRAME = (3840, 1080)  # два монитора, как у владельца
+    FRAME = (3840, 1080)  # два монитора рядом
     AVAIL = (1500, 800)
 
     def test_small_selection_zoom_100_window_fits_selection(self):
@@ -84,7 +84,7 @@ class TestInitialView:
 
 
 class TestScrollBars:
-    """Полосы прокрутки вьюпорта (бэклог п.12): видимость и синхронизация."""
+    """Полосы прокрутки вьюпорта: видимость и синхронизация."""
 
     THICK = 10
 
@@ -143,7 +143,7 @@ class TestScrollBars:
     def test_bars_take_exactly_their_thickness(self):
         # кадр шире окна чуть меньше, чем на толщину полосы: появляется
         # вторая полоса, и обе забирают ровно свою толщину — краевого
-        # зазора нет, полосы прижаты к краю окна (З3.1)
+        # зазора нет, полосы прижаты к краю окна
         bars = self._bars((800, 600), (795, 900))
         assert bars.vertical and bars.horizontal
         assert bars.view_w == 800 - self.THICK

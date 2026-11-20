@@ -1,4 +1,4 @@
-"""P0/P1-тесты тихого скриншота всех экранов (DS-9, бэклог п.21).
+"""P0/P1-тесты тихого скриншота всех экранов.
 
 - имена файлов: суффикс «_мон<N>» при нескольких мониторах, обычная маска
   при одном; счётчик общий на захват и не затирает предыдущий (чистое ядро);
@@ -60,7 +60,7 @@ class _Listener:
 # --- имена файлов: чистое ядро ---
 
 def test_one_monitor_keeps_plain_mask():
-    # при одном мониторе — обычная маска без суффикса (ТЗ, часть 1)
+    # при одном мониторе — обычная маска без суффикса
     assert quiet.file_names(MOMENT, 1, 1) == ["LogaShot_2026-11-19_15-08-33_001.png"]
 
 
@@ -79,7 +79,7 @@ def test_file_names_reject_empty_screen_list():
 
 
 def test_next_counter_skips_monitor_files():
-    # второй тихий захват в ту же секунду не должен затирать первый (DS-9)
+    # второй тихий захват в ту же секунду не должен затирать первый
     names = ["LogaShot_2026-11-19_15-08-33_001_мон1.png",
              "LogaShot_2026-11-19_15-08-33_001_мон2.png"]
     assert storage.next_counter(names, MOMENT) == 2
@@ -134,7 +134,7 @@ def test_capture_does_not_touch_clipboard(tmp_path, monkeypatch):
     saved = quiet.capture(shots_dir=tmp_path)
 
     assert len(saved) == 1 and saved[0].name.endswith("_001.png")  # без суффикса
-    assert touched == []  # решение владельца 19.11: буфер обмена не трогаем
+    assert touched == []  # буфер обмена не трогаем
 
 
 def test_capture_passes_errors_to_caller(tmp_path, monkeypatch):
@@ -158,7 +158,7 @@ def test_quiet_hotkey_default_and_roundtrip(portable):
     assert hotkey.combo_label(s.quiet_hotkey()) == "Shift+PrtScr"
     s.set_quiet_hotkey("ctrl+alt+q")
     assert s.quiet_hotkey() == "ctrl+alt+q"
-    s.set_quiet_hotkey("alt+я")  # запись при русской раскладке мигрирует (Б2.4)
+    s.set_quiet_hotkey("alt+я")  # запись при русской раскладке мигрирует
     assert s.quiet_hotkey() == "alt+z"
     with pytest.raises(ValueError):
         s.set_quiet_hotkey("")
@@ -202,7 +202,7 @@ def test_settings_window_rejects_duplicates(app, portable, monkeypatch):
 
 
 def test_panel_popup_shows_quiet_hotkey_label(app, portable, monkeypatch):
-    """З5.1: попап с панели показывает актуальную подпись тихого хоткея."""
+    """Попап с панели показывает актуальную подпись тихого хоткея."""
     listener = _Listener()
     monkeypatch.setattr(hotkey, "get_listener", lambda: listener)
     ov = CaptureOverlay()

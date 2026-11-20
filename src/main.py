@@ -26,7 +26,7 @@ from tray import TrayIcon, open_settings_window
 
 def _set_dpi_awareness():
     """Per-Monitor V2: захват идёт в физических пикселях, текст не "плывёт"
-    при масштабе Windows > 100% (баг 1 dogfooding)."""
+    при масштабе Windows > 100%."""
     try:
         # DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = -4
         ctypes.windll.user32.SetProcessDpiAwarenessContext(-4)
@@ -50,7 +50,7 @@ def _icon_path() -> Path:
 
 
 def _tray_icon_path() -> Path:
-    """Иконка трея: увеличенный глиф (Б2.5), отдельный файл."""
+    """Иконка трея: увеличенный глиф, отдельный файл."""
     return _assets_dir() / "LogaShot_tray.ico"
 
 
@@ -125,7 +125,7 @@ def _tray_status(tray: TrayIcon) -> tuple[int, str]:
 
 
 def _launch_toast_text():
-    """Тост о запуске (З3.3): сочетание — актуальное из настроек.
+    """Тост о запуске: сочетание — актуальное из настроек.
 
     Подпись сочетания берём тем же `hotkey.combo_label`, что и окно
     настроек, поэтому после смены сочетания тост покажет новое.
@@ -137,7 +137,7 @@ def _launch_toast_text():
 def _announce_startup(first_run_window, tray_anchor):
     """Тост «LogaShot запущен» на каждом старте, кроме старта с онбордингом.
 
-    З3.3: старты после первого раньше были полностью молчаливыми — по тосту
+    Старты после первого раньше были полностью молчаливыми — по тосту
     видно, что приложение действительно запустилось. Автозапуск с Windows,
     portable и installed ведут себя одинаково: ветки по способу старта нет.
     Если в этом старте показан онбординг (он и так объясняет, что дальше) —
@@ -149,7 +149,7 @@ def _announce_startup(first_run_window, tray_anchor):
 
 
 def _sync_autostart():
-    """Привести ключ автозагрузки Windows к настройке (бэклог п.13).
+    """Привести ключ автозагрузки Windows к настройке.
 
     Вызывается на каждом старте — это закрывает сразу три случая: первый
     запуск после установки (ключа ещё нет), миграцию машин, где онбординг
@@ -165,7 +165,7 @@ def _sync_autostart():
 
 
 def _run_quiet_capture(overlay, notify, capture=None):
-    """Тихий скриншот всех экранов по хоткею или из меню трея (DS-9).
+    """Тихий скриншот всех экранов по хоткею или из меню трея.
 
     Активный оверлей — модальный режим: тихий захват игнорируется. Ошибку
     записи не маскируем (Fail Fast): тост-ошибка по гайду «факт + выход»,
@@ -206,7 +206,7 @@ def _run_app():
 
     def start_capture():
         # повторный PrtScr при открытом оверлее — без эффекта (POLA);
-        # пин-окна при новом захвате не закрываются (ТЗ п.3)
+        # пин-окна при новом захвате не закрываются
         if not overlay.isVisible():
             overlay.start()
 
@@ -218,7 +218,7 @@ def _run_app():
 
     def prepare_pin():
         # «Пин» нажат: оверлей ещё гаснет (180 мс) — окно собираем в это время,
-        # чтобы сборка не добавлялась к переходу (З4.4). Показывает open_pin.
+        # чтобы сборка не добавлялась к переходу. Показывает open_pin.
         if prepared_pins:
             return prepared_pins[0]
         win = PinWindow(overlay)
@@ -246,12 +246,12 @@ def _run_app():
     hotkey.triggered.connect(start_capture, Qt.ConnectionType.QueuedConnection)
     hotkey.start()
 
-    # трей — отдельная иконка с увеличенным глифом (Б2.5); окна/ярлык/exe —
-    # брендовая иконка без изменений (правка владельца 30.10)
+    # трей — отдельная иконка с увеличенным глифом; окна/ярлык/exe —
+    # брендовая иконка без изменений
     quiet_toasts = []  # живые тосты тихого захвата — ссылку держим мы
 
     def notify_quiet(text):
-        """Один тост на тихий захват у иконки трея, без действий (DS-9)."""
+        """Один тост на тихий захват у иконки трея, без действий."""
         toast = toast_mod.show_launch(text, tray.geometry(),
                                       duration_ms=quiet_mod.TOAST_MS)
         quiet_toasts.append(toast)
@@ -275,7 +275,7 @@ def _run_app():
     if first_run is not None:
         first_run_windows.append(first_run)
     # На остальных стартах — тост у трея «LogaShot запущен» с актуальным
-    # сочетанием (З3.3); ссылку держим, иначе Qt закроет окно сборщиком мусора
+    # сочетанием; ссылку держим, иначе Qt закроет окно сборщиком мусора
     startup_toasts = []
     startup_toast = _announce_startup(first_run, tray.geometry())
     if startup_toast is not None:

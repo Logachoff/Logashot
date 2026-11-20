@@ -114,7 +114,7 @@ def test_select_tool_picks_object_and_places_nothing(overlay):
     _stroke(overlay, "frame", [(80, 80), (200, 160)])
     count = len(overlay._objects)
     # «Выбор»: клик по обводке рамки выбирает её (рамка ловит клик только
-    # по границе — пустота внутри пустое место, баг 25.10), клик в пустоту —
+    # по границе — пустота внутри пустое место), клик в пустоту —
     # снимает
     ov = overlay
     ov._set_tool(None)
@@ -136,7 +136,7 @@ def test_ctrl_s_opens_folder_after_save(overlay, tmp_path, monkeypatch):
                         staticmethod(lambda *a, **k: (str(tmp_path / "s.png"), "")))
     monkeypatch.setattr(canvas_mod.storage, "open_shots_folder",
                         lambda folder: opened.append(Path(folder)))
-    # автосохранение Enter пишет во временную папку, не в папку владельца
+    # автосохранение Enter пишет во временную папку, не в реальную папку скриншотов
     monkeypatch.setattr(canvas_mod.storage, "shot_dir", lambda home: tmp_path)
 
     overlay._save_as()
@@ -218,7 +218,7 @@ def test_marker_preview_follows_cursor(overlay):
 
 def test_num_tool_activates_from_panel(overlay):
     """Регрессия: клик по кнопке «Номер шага» активирует инструмент
-    (num выпал из ветки инструментов _on_panel_action — баг 24.10)."""
+    (num выпал из ветки инструментов _on_panel_action)."""
     overlay._on_panel_action("num")
     assert overlay._tool == "num"
     assert overlay._panel.button("num")._active

@@ -1,14 +1,14 @@
-"""Панель инструментов (спецификация v0.2, ТЗ п.3 — мок v2.13).
+"""Панель инструментов (спецификация v0.2).
 
 Одна спецификация (_PANEL_SPEC) для обеих панелей — захвата и пин-окна:
-тот же порядок кнопок, тултипы, веса и размер (правка владельца 17.10:
-панель пин-окна — та же панель полного размера, одной строкой).
+тот же порядок кнопок, тултипы, веса и размер:
+панель пин-окна — та же панель полного размера, одной строкой.
 20 кнопок (было 16): добавлены «Выбор» (V), «Маркер» (6),
 «Выделение области» (7), «Рамка» (8) — инструменты v0.2.
 Три уровня визуального веса (размер и цвет = частота использования):
 акцент — только «Копировать»; обычные — сохранить, инструменты разметки,
-OCR и «Пин» (заметность пина, решение владельца 24.10: из ghost-группы
-выведен к обычным кнопкам); ghost (меньше, --muted) — папка, «в почту»,
+OCR и «Пин» (заметность пина: «Пин» выведен из ghost-группы
+к обычным кнопкам); ghost (меньше, --muted) — папка, «в почту»,
 масштаб, настройки, закрыть. Dimmed-заглушек нет: OCR (5) с версии 0.3.0 —
 обычный работающий инструмент.
 Позиционирование — в чистом модуле panel_layout.
@@ -43,7 +43,7 @@ import toast as toast_mod
 _BTN = 40  # сторона кнопки панели, px (мок: .tb)
 _GHOST_DELTA = 6  # ghost меньше обычной: 34 px
 _ICON = 20  # иконка обычной кнопки; ghost — на 3 px меньше
-_PRESS_SCALE = 0.93  # «утопление» кнопки при нажатии (ТЗ §3г)
+_PRESS_SCALE = 0.93  # «утопление» кнопки при нажатии
 _CLICK_SLOP = 4  # сдвиг монограммы, после которого это уже не клик, px
 
 
@@ -71,9 +71,9 @@ class IconButton(QAbstractButton):
         self._ghost = ghost
         self._badge = badge
         self._brand = brand
-        self._active = False  # активный инструмент (подсветка --navy, ТЗ §3г)
+        self._active = False  # активный инструмент (подсветка --navy)
         self._fill_color = theme.ANN_RED  # для кнопки «Цвет»: точка текущего цвета
-        self._press_pos = None  # где нажали монограмму (клик ≠ драг, З3.2)
+        self._press_pos = None  # где нажали монограмму (клик ≠ драг)
 
         self._badge_font = QFont(self.font())
         self._badge_font.setPixelSize(9)
@@ -90,7 +90,7 @@ class IconButton(QAbstractButton):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def set_badge(self, text):
-        """Бейдж в углу кнопки (текущий % масштаба, ТЗ §3г)."""
+        """Бейдж в углу кнопки (текущий % масштаба)."""
         self._badge = text
         self.update()
 
@@ -100,12 +100,12 @@ class IconButton(QAbstractButton):
         self.update()
 
     def set_active(self, active):
-        """Подсветка активного инструмента (фон --navy, ТЗ §3г)."""
+        """Подсветка активного инструмента (фон --navy)."""
         self._active = active
         self.update()
 
     def mousePressEvent(self, event):
-        # монограмма открывает «О программе» (З3.2): запоминаем точку нажатия,
+        # монограмма открывает «О программе»: запоминаем точку нажатия,
         # чтобы отличить клик от таскания панели за кнопку
         if self._brand and event.button() == Qt.MouseButton.LeftButton:
             self._press_pos = event.globalPosition().toPoint()
@@ -146,12 +146,11 @@ class IconButton(QAbstractButton):
             painter.drawRoundedRect(self.rect().adjusted(0, 0, -1, -1), 10, 10)
 
         # содержимое: иконка scale .93 вокруг центра; обходим painter.scale,
-        # иначе бейдж тоже масштабируется и обрезается границами кнопки
-        # (баг 4 dogfooding).
+        # иначе бейдж тоже масштабируется и обрезается границами кнопки.
         if self._brand:
             painter.setOpacity(1.0 if hovered else 0.45)
         elif self._ghost and not hovered:
-            painter.setOpacity(0.85)  # ghost приглушён, но рабочий (мок v2.11)
+            painter.setOpacity(0.85)  # ghost приглушён, но рабочий
 
         icon_color = self._icon_color(hovered)
         icon_size = self._icon
@@ -181,7 +180,7 @@ class IconButton(QAbstractButton):
                              | Qt.AlignmentFlag.AlignBottom,
                              self._badge)
 
-        # фокус-кольцо --accent (ТЗ §3г)
+        # фокус-кольцо --accent
         if self.hasFocus():
             painter.setPen(QPen(QColor(theme.ACCENT), 2))
             painter.setBrush(Qt.BrushStyle.NoBrush)
@@ -211,10 +210,10 @@ class _Divider(QWidget):
         painter.end()
 
 
-# Состав и порядок панели (спецификация v0.2, мок v2.13); None — разделитель.
+# Состав и порядок панели (спецификация v0.2); None — разделитель.
 # Веса: accent — только «Копировать»; ghost — редкие действия (папка,
 # «в почту» без подписи и заливки, масштаб, настройки, закрыть);
-# «Пин» и OCR — обычный вес («Пин» — заметность, решение владельца 24.10;
+# «Пин» и OCR — обычный вес («Пин» — заметность;
 # OCR — рабочий инструмент с 0.3.0); brand — монограмма.
 _PANEL_SPEC = (
     ("copy", "Скопировать в буфер — Ctrl+C", {"accent": True}),
@@ -304,8 +303,7 @@ class ToolbarPanel(QFrame):
 
 class PinPanel(QFrame):
     """Панель пин-окна: ТА ЖЕ панель, что у захвата, одним рядом и того же
-    размера (спецификация 17.10 + правка владельца 17.10: «сделай как
-    нижнее по размеру»). Одновременно — часть шапки окна: таскание за фон."""
+    размера. Одновременно — часть шапки окна: таскание за фон."""
 
     triggered = Signal(str)
 
@@ -320,9 +318,9 @@ class PinPanel(QFrame):
         names = [item if item is None else item[0] for item in _PANEL_SPEC]
         _fill_row(layout, names, self, self.triggered.emit, self._buttons,
                   draggable=True)
-        # «Пин» здесь — обратное действие: тултип «снять с пина» (мок v2.11)
+        # «Пин» здесь — обратное действие: тултип «снять с пина»
         # и нажатое состояние (подсветка --navy), иначе неочевидно, что
-        # кнопка — переключатель обратно в оверлей (правка владельца 17.10)
+        # кнопка — переключатель обратно в оверлей
         pin_btn = self._buttons["pin"]
         pin_btn.setToolTip("Снять с пина — вернуться к захвату")
         pin_btn.set_active(True)
@@ -485,7 +483,7 @@ class _Toggle(QAbstractButton):
 
 
 class HotkeyButton(QPushButton):
-    """Кнопка записи горячей клавиши (мок v2.13): показывает сочетание,
+    """Кнопка записи горячей клавиши: показывает сочетание,
     по клику — «Жду нажатия…», следующее нажатие записывается.
 
     Правила записи: принимаем клавишу с модификаторами или одиночную
@@ -576,7 +574,7 @@ def modifiers_active(event):
 
 
 def hotkey_taken(combo):
-    """Кем занято сочетание сейчас: «capture» | «quiet» | None (DS-9).
+    """Кем занято сочетание сейчас: «capture» | «quiet» | None.
 
     Дубли запрещены в обе стороны: и основной хоткей, и тихий не могут
     записать сочетание, занятое вторым.
@@ -587,7 +585,7 @@ def hotkey_taken(combo):
 class SettingsPopup(QFrame):
     """Попап «Настройки» (шестерёнка): режим панели, визитка, горячая
     клавиша захвата + перехват PrtScr (фича v0.2), тихий скриншот всех
-    экранов (DS-9).
+    экранов.
 
     Значения применяются сразу и хранятся в QSettings (settings.py).
     Дубли сочетаний запрещены: записанное сочетание сверяется с занятым
@@ -597,9 +595,9 @@ class SettingsPopup(QFrame):
     mode_chosen = Signal(str)  # settings.MODE_IMMEDIATE / MODE_CTRL
     watermark_toggled = Signal(bool)
     hotkey_chosen = Signal(str)  # сочетание в формате keyboard
-    quiet_hotkey_chosen = Signal(str)  # тихий скриншот всех экранов (DS-9)
+    quiet_hotkey_chosen = Signal(str)  # тихий скриншот всех экранов
     suppress_toggled = Signal(bool)
-    autostart_toggled = Signal(bool)  # автозагрузка с Windows (бэклог п.13)
+    autostart_toggled = Signal(bool)  # автозагрузка с Windows
 
     _MODES = (
         ("immediate", "Сразу — панель после выделения"),
@@ -657,7 +655,7 @@ class SettingsPopup(QFrame):
         row.addWidget(self._hotkey_btn)
         layout.addLayout(row)
 
-        # DS-9: тихий скриншот всех экранов — свой хоткей, дубли запрещены
+        # тихий скриншот всех экранов — свой хоткей, дубли запрещены
         row = QHBoxLayout()
         row.setContentsMargins(10, 2, 10, 0)
         hint = QLabel("Тихий скриншот всех экранов", self)
@@ -682,7 +680,7 @@ class SettingsPopup(QFrame):
         row.addWidget(self._suppress)
         layout.addLayout(row)
 
-        # фича v0.2 (бэклог п.13): самопрописывание в автозагрузку Windows
+        # фича v0.2: самопрописывание в автозагрузку Windows
         row = QHBoxLayout()
         row.setContentsMargins(10, 0, 10, 6)
         hint = QLabel("Запускать вместе с Windows", self)
@@ -701,7 +699,7 @@ class SettingsPopup(QFrame):
         self.watermark_toggled.emit(checked)
 
     def _on_capture_hotkey(self, combo):
-        """Запись основного сочетания: занятое тихим — отказ (DS-9)."""
+        """Запись основного сочетания: занятое тихим — отказ."""
         if hotkey_taken(combo) == "quiet":
             self._reject_hotkey(self._hotkey_btn, settings.capture_hotkey(),
                                 "Занято тихим скриншотом — выбери другое")
@@ -709,7 +707,7 @@ class SettingsPopup(QFrame):
         self.hotkey_chosen.emit(combo)
 
     def _on_quiet_hotkey(self, combo):
-        """Запись сочетания тихого захвата: занятое основным — отказ (DS-9)."""
+        """Запись сочетания тихого захвата: занятое основным — отказ."""
         if hotkey_taken(combo) == "capture":
             self._reject_hotkey(self._quiet_btn, settings.quiet_hotkey(),
                                 "Занято захватом — выбери другое сочетание")
@@ -750,7 +748,7 @@ class SettingsPopup(QFrame):
 
 
 class SettingsWindow(SettingsPopup):
-    """Окно настроек из меню трея (Д1): тот же попап, но самостоятельное окно.
+    """Окно настроек из меню трея: тот же попап, но самостоятельное окно.
 
     Открывается без запуска захвата. Сигналы те же, что у попапа панели, —
     изменения применяются сразу. Закрывается по Esc или клику мимо (Qt.Popup);
@@ -765,7 +763,7 @@ class SettingsWindow(SettingsPopup):
                             | Qt.WindowType.FramelessWindowHint)
         # скруглённые углы: вокруг контура — прозрачно (рабочий стол виден)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        # тултип кнопки записи сочетания: попап-окно активно не всегда (З4.1)
+        # тултип кнопки записи сочетания: попап-окно активно не всегда
         self.setAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips)
 
     def paintEvent(self, event):

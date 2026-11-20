@@ -50,7 +50,7 @@ _STROKE = {
     # рамка (8) — пунктирный прямоугольник
     "frame": '<rect x="4" y="4" width="16" height="16" rx="2" stroke-dasharray="4 3"/>'
              '<path d="M4 9V4a0 0 0 0 1 0 0h5"/>',
-    # кнопки шапки пин-окна (правка владельца 17.10: − ▢ ✕ как у Windows)
+    # кнопки шапки пин-окна (− ▢ ✕ как у Windows)
     "min": '<path d="M5 12h14"/>',
     "max": '<rect x="5" y="5" width="14" height="14" rx="2"/>',
     "restore": '<rect x="8" y="8" width="12" height="12" rx="2"/>'

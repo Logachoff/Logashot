@@ -1,4 +1,4 @@
-"""P1: «В почту» не зависает без MAPI (баг 2 dogfooding)."""
+"""P1: «В почту» не зависает без MAPI."""
 
 import sys
 import time

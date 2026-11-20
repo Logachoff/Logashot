@@ -1,6 +1,6 @@
-"""Базовый холст аннотаций: общая логика оверлея захвата и пин-окна (ТЗ п.3:
-«Редактируемость действует и в закреплённом окне: пин = приложение, ничего
-не замораживается»).
+"""Базовый холст аннотаций: общая логика оверлея захвата и пин-окна.
+Редактируемость действует и в закреплённом окне: пин = приложение, ничего
+не замораживается.
 
 Координаты объектов и выделения — в пикселях КАДРА. В оверлее они совпадают
 с координатами виджета (зум 1:1); в пин-окне есть зум и прокрутка —
@@ -61,11 +61,11 @@ from toast import Toast
 
 _CLICK_TOL = 12  # сдвиг мыши, до которого драг считается кликом, px.
 # Было 4 px: у части мышей клик превращается в микродраг на 5–10 px,
-# и клик инструментом «текст/номер» молча гас (баг 25.10: «кружок
+# и клик инструментом «текст/номер» молча гас (симптом: «кружок
 # не ставится внутри рамки» — курсор-перекрестье есть, объекта нет).
 DASH = 4  # длина штриха рамки, px (чередование акцент/белый)
 HANDLE_HALF = 4  # половина стороны ручки рамки выделения, px
-OCR_MIN = 8  # регион меньше — мусорный drag, OCR не запускаем (ТЗ DS-7, п.1)
+OCR_MIN = 8  # регион меньше — мусорный drag, OCR не запускаем
 
 _FADE_MS = animations._FADE_MS  # единый тайминг (animations.py)
 # Режимы драга объектов аннотаций (общие). Подклассы добавляют свои
@@ -128,7 +128,7 @@ class AnnotationCanvas(QWidget):
         self._drag_mode = _DRAG_NONE
         self._drag_anchor = None  # точка нажатия / снапшоты для режима
 
-        # Аннотации (ТЗ §3г)
+        # Аннотации
         self._objects = []  # размещённые аннотации (модель — annotations.py)
         self._history = History()  # undo/redo, стек 10
         self._tool = None  # активный инструмент: arrow/text/blur/num или None
@@ -152,7 +152,7 @@ class AnnotationCanvas(QWidget):
         self._ocr.finished.connect(self._on_ocr_finished)
         self._ocr.failed.connect(self._on_ocr_failed)
 
-        # Клавиши (ТЗ §3г): QShortcut — работают и при фокусе на кнопках
+        # Клавиши: QShortcut — работают и при фокусе на кнопках
         # панели/попапов (тот же топ-левел). Пока редактируется текстовая
         # аннотация, все они отключены — буквы и Enter уходят в поле ввода
         # (принцип из Горячие_клавиши_проект.md).
@@ -249,14 +249,14 @@ class AnnotationCanvas(QWidget):
         return False
 
     def _exit_before_folder(self):
-        """Хук: закрыть своё окно, если оно перекрывает проводник (З4.2)."""
+        """Хук: закрыть своё окно, если оно перекрывает проводник."""
 
     def _finish(self):
         """Выход из холста: оверлей — cancel(), пин-окно — close."""
         raise NotImplementedError
 
     def _pin_action(self):
-        """Кнопка «Пин» — переключатель (ТЗ п.3)."""
+        """Кнопка «Пин» — переключатель."""
         raise NotImplementedError
 
     def _toast_anchor(self):
@@ -447,7 +447,7 @@ class AnnotationCanvas(QWidget):
         return True
 
     def mouseReleaseEvent(self, event):
-        perf.mark("release")  # З4.4: начало интервала «отпустил → панель»
+        perf.mark("release")  # начало интервала «отпустил → панель»
         if event.button() != Qt.MouseButton.LeftButton:
             return
         mode = self._drag_mode
@@ -511,7 +511,7 @@ class AnnotationCanvas(QWidget):
         elif mode == _DRAG_OCR:
             draft, self._draft = self._draft, None
             self.update()
-            # меньше OCR_MIN — мусорный drag: тихая отмена, без тоста (ТЗ)
+            # меньше OCR_MIN — мусорный drag: тихая отмена, без тоста
             if draft is not None:
                 rect = draft["rect"]
                 if rect[2] >= OCR_MIN and rect[3] >= OCR_MIN:
@@ -541,7 +541,7 @@ class AnnotationCanvas(QWidget):
 
     def mouseDoubleClickEvent(self, event):
         """Двойной клик по текстовой аннотации — правка её текста
-        (решение владельца 16.10: опечатка не должна начинаться сначала)."""
+        (опечатка не должна начинаться сначала)."""
         if event.button() != Qt.MouseButton.LeftButton or self._selection is None:
             return
         pos = self._to_frame((int(event.position().x()), int(event.position().y())))
@@ -610,7 +610,7 @@ class AnnotationCanvas(QWidget):
             self._blur_dirty = True
 
     def _resize_object(self, obj, original, pos):
-        """Ресайз за правый нижний уголок (ТЗ §3г): блюр/выделение/рамка —
+        """Ресайз за правый нижний уголок: блюр/выделение/рамка —
         рамка, текст — размер шрифта, номер — размер бейджа. Маркер не
         ресайзится — только перетаскивание (спека v0.2)."""
         if obj["type"] == "blur":
@@ -645,7 +645,7 @@ class AnnotationCanvas(QWidget):
         """Активировать инструмент; повторный выбор снимает активность.
 
         Снимаем выделение объекта при смене инструмента — иначе ручки
-        выделенного объекта и рамка начинают конфликтовать (баг 8 dogfooding).
+        выделенного объекта и рамка начинают конфликтовать.
         """
         if name is not None and self._tool == name:
             name = None
@@ -659,7 +659,7 @@ class AnnotationCanvas(QWidget):
     def _undo(self):
         state = self._history.undo(deepcopy(self._objects))
         if state is None:
-            return  # пустой стек — клик по ↩ бездействует, как Ctrl+Z (ТЗ §3г)
+            return  # пустой стек — клик по ↩ бездействует, как Ctrl+Z
         self._objects = state
         self._selected = None
         self._blur_dirty = True
@@ -675,7 +675,7 @@ class AnnotationCanvas(QWidget):
         self.update()
 
     def _delete_selected(self):
-        """Del — удалить выбранную аннотацию (ТЗ §3г)."""
+        """Del — удалить выбранную аннотацию."""
         if self._selected is None or self._selected >= len(self._objects):
             return
         self._push_history()
@@ -730,7 +730,7 @@ class AnnotationCanvas(QWidget):
         self._set_shortcuts_enabled(False)
 
     def _fit_editor(self, editor):
-        """Автораздвижка поля по мере ввода (правка владельца 16.10):
+        """Автораздвижка поля по мере ввода:
         ширина следует за текстом, у правого края поле сдвигается влево."""
         width = min(max(120, editor.fontMetrics().horizontalAdvance(editor.text()) + 40),
                     self.width() - 8)
@@ -806,7 +806,7 @@ class AnnotationCanvas(QWidget):
         return super().eventFilter(obj, event)
 
     def _escape(self):
-        """Esc по уровням (ТЗ §3г): попап → ввод текста → выбор/инструмент →
+        """Esc по уровням: попап → ввод текста → выбор/инструмент →
         выход из холста."""
         if self._close_popups():
             return
@@ -868,8 +868,8 @@ class AnnotationCanvas(QWidget):
             # кнопки-меню: своё меню переключают, чужие закрывают
             self._toggle_popup(name)
             return
-        # любое другое действие панели скрывает открытые меню (баг-репорт
-        # владельца 16.10: попап масштаба оставался поверх диалога сохранения)
+        # любое другое действие панели скрывает открытые меню (иначе попап
+        # масштаба оставался поверх диалога сохранения)
         self._close_popups()
         if name in ("select", "arrow", "text", "blur", "num",
                     "marker", "hl", "frame", "ocr"):
@@ -888,12 +888,12 @@ class AnnotationCanvas(QWidget):
             self._pin_action()
         elif name == "brand":
             # монограмма в конце панели — «О программе», как в меню трея
-            # (З3.2: обе панели, панель захвата и панель пин-окна)
+            # (на обеих панелях — и захвата, и пин-окна)
             show_about()
         elif name == "cancel":
             self._finish()
 
-    # --- OCR: действие, а не разметка (ТЗ DS-7, часть 1) ---
+    # --- OCR: действие, а не разметка ---
 
     def _recognize_region(self, rect):
         """Распознать регион кадра: текст → в буфер, тост с числом символов.
@@ -925,7 +925,7 @@ class AnnotationCanvas(QWidget):
         self._popups["color"].set_color(hex_color)
         self._panel.button("color").set_fill_color(hex_color)
         self._popups["color"].hide()
-        # выбранному объекту цвет меняем тоже (правка undoable, ТЗ §3г)
+        # выбранному объекту цвет меняем тоже (правка undoable)
         if self._selected is not None and self._selected < len(self._objects):
             obj = self._objects[self._selected]
             if ann.has_color(obj) and obj["color"] != hex_color:
@@ -955,7 +955,7 @@ class AnnotationCanvas(QWidget):
 
     def _on_quiet_hotkey_chosen(self, combo):
         """Новое сочетание тихого захвата: сохраняем и пересоздаём хуки
-        сразу (DS-9). Тост не показываем — как в окне из трея."""
+        сразу. Тост не показываем — как в окне из трея."""
         settings.set_quiet_hotkey(combo)
         hotkey.get_listener().reload()
 
@@ -979,8 +979,8 @@ class AnnotationCanvas(QWidget):
     def _render_final(self):
         """Итоговый кадр: выделение + блюр + аннотации + полоска-визитка.
 
-        Именно он уходит в файл и буфер (ТЗ §3г, спецификация визитки);
-        в пин-окне правило то же: пин — просмотр, в файл уходит рамка (ТЗ п.3).
+        Именно он уходит в файл и буфер (спецификация визитки);
+        в пин-окне правило то же: пин — просмотр, в файл уходит рамка.
         """
         pm = self._selection_pixmap()
         sx, sy, sw, sh = self._selection
@@ -1022,7 +1022,7 @@ class AnnotationCanvas(QWidget):
         return path
 
     def _confirm(self):
-        """Enter: файл по маске + кадр в буфер + тост «готово» → выход (ТЗ §3г)."""
+        """Enter: файл по маске + кадр в буфер + тост «готово» → выход."""
         if self._selection is None or self._text_editor is not None:
             return
         self._close_popups()  # действие с клавиатуры тоже скрывает меню
@@ -1040,7 +1040,7 @@ class AnnotationCanvas(QWidget):
     def _copy_to_clipboard(self):
         """Ctrl+C / кнопка «копировать»: кадр в буфер → выход из режима захвата.
 
-        Решение владельца 16.10: после копирования оверлей закрывается,
+        После копирования оверлей закрывается,
         как и при Enter (сценарий «снял → отправил» без лишних шагов).
         """
         if self._selection is None or self._text_editor is not None:
@@ -1052,8 +1052,8 @@ class AnnotationCanvas(QWidget):
 
     def _save_as(self):
         """Ctrl+S / кнопка «сохранить»: диалог сохранения, после записи —
-        выход из захвата и открытие папки со скрином (решение владельца
-        23.10/24.10; Enter — автосохранение — остаётся «тихим», без папки)."""
+        выход из захвата и открытие папки со скрином (Enter — автосохранение —
+        остаётся «тихим», без папки)."""
         if self._selection is None or self._text_editor is not None:
             return
         self._close_popups()  # меню не висит поверх диалога сохранения
@@ -1089,11 +1089,11 @@ class AnnotationCanvas(QWidget):
             self._show_toast(f"Не удалось открыть папку — {exc}")
             return
         self._show_toast("Открываю папку со скриншотами")
-        # перекрывающее окно закрывается: иначе папка окажется под ним (З4.2)
+        # перекрывающее окно закрывается: иначе папка окажется под ним
         self._exit_before_folder()
 
     def _send_mail(self):
-        """Ctrl+M / кнопка «В почту»: письмо с вложением кадра (ТЗ §3г).
+        """Ctrl+M / кнопка «В почту»: письмо с вложением кадра.
 
         Кадр пишется во временную папку по той же маске имён. Почтового
         клиента нет — кадр уходит в буфер, тост объясняет (гайд тона).
@@ -1146,7 +1146,7 @@ class AnnotationCanvas(QWidget):
             self._toast = None
 
     def _place_toast(self):
-        """Тост следует за панелью и не перекрывает её (ТЗ §3г).
+        """Тост следует за панелью и не перекрывает её.
 
         Тост — отдельное окно, поэтому позиция считается в глобальных
         координатах (холст может начинаться не в (0,0) при двух мониторах).
@@ -1170,7 +1170,7 @@ class AnnotationCanvas(QWidget):
         Кэш пересчитывается только когда блюры менялись (_blur_dirty) —
         перетаскивание стрелок и текста мозаику не пересчитывает.
         Блюр, который сейчас тащат, исключается из кэша и рисуется
-        отдельным превью — так drag не фризит UI (баг 5 dogfooding).
+        отдельным превью — так drag не фризит UI.
         """
         rects = [
             o["rect"] for i, o in enumerate(self._objects)
@@ -1239,8 +1239,8 @@ class AnnotationCanvas(QWidget):
         if len1 < 0.5 or len2 < 0.5:  # вырожденная точка — рисуем как есть
             painter.drawPolyline([QPointF(*p) for p in pts])
             return
-        # стрелка — квадратичная кривая Безье (правка владельца 16.10, вид —
-        # как в прототипе): точка сгиба — управляющая, изгиб плавный целиком
+        # стрелка — квадратичная кривая Безье: точка сгиба — управляющая,
+        # изгиб плавный целиком
         path = QPainterPath(QPointF(*tail))
         path.quadTo(QPointF(*bend), QPointF(*tip))
         painter.drawPath(path)
@@ -1266,7 +1266,7 @@ class AnnotationCanvas(QWidget):
         painter.restore()
 
     def _paint_marker(self, painter, obj, ox=0, oy=0):
-        """Маркер (спека v0.2, мок v2.13): линия 3,5 px цвета аннотаций
+        """Маркер (спека v0.2): линия 3,5 px цвета аннотаций
         сквозь все точки + кружок радиуса 1,75 px на каждой — визуально
         сплошной росчерк, как карандаш в Paint."""
         pts = [(px + ox, py + oy) for px, py in obj["pts"]]
@@ -1363,7 +1363,7 @@ class AnnotationCanvas(QWidget):
     def _paint_dashed_frame(self, painter, rect):
         """Рамка выделения: штрих-пунктир акцент/белый (два пера со сдвигом).
 
-        Штрих выровнен по целым физическим пикселям (З4.3): толщина — ровно
+        Штрих выровнен по целым физическим пикселям: толщина — ровно
         1 физ. px, координаты — по центрам пикселей. Иначе на дробном dpr
         (105/125/150%) линия в 1 логический px распыляется сглаживанием, и
         картина зависит от субпиксельной фазы ребра: левое «худеет», верх

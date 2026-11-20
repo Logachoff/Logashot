@@ -1,10 +1,10 @@
-"""P0-тесты спецификации панели (ТЗ п.3, мок v2.13, спека v0.2).
+"""P0-тесты спецификации панели (спека v0.2).
 
 Порядок и состав кнопок (20 кнопок: добавлены select/marker/hl/frame),
 флаги весов (accent только «Копировать», ghost — редкие действия без
 пина: заметность пина, решение 24.10, dimmed-заглушек нет — OCR с 0.3.0
 обычный инструмент), один ряд
-в пин-окне полного размера (правка владельца 17.10). Легко сломать
+в пин-окне полного размера. Легко сломать
 правкой _PANEL_SPEC, дорого заметить глазами.
 """
 
@@ -65,7 +65,7 @@ def test_weights_accent_only_copy():
 def test_weights_ghost_set():
     ghosts = {item[0] for item in _PANEL_SPEC if item and item[2].get("ghost")}
     assert ghosts == GHOST_BUTTONS
-    # «Пин» — обычного веса, как инструменты (решение владельца 24.10)
+    # «Пин» — обычного веса, как инструменты
     assert not _flags("pin").get("ghost")
     assert not _flags("pin").get("accent")
     # остальные обычные кнопки — без флагов веса
@@ -74,7 +74,7 @@ def test_weights_ghost_set():
 
 
 def test_no_dimmed_buttons():
-    """Dimmed-заглушек нет: OCR (5) с 0.3.0 — обычный инструмент (DS-7 п.1)."""
+    """Dimmed-заглушек нет: OCR (5) с 0.3.0 — обычный инструмент."""
     dimmed = {item[0] for item in _PANEL_SPEC if item and item[2].get("dimmed")}
     assert dimmed == set()
 
@@ -106,7 +106,7 @@ def test_pin_panel_single_row_same_size(qapp):
     for name in EXPECTED_ORDER:
         if name is not None:
             assert pp.button(name) is not None, name
-    # размеры — как у панели захвата (правка владельца 17.10)
+    # размеры — как у панели захвата
     assert pp.button("copy").width() == _BTN
     assert pp.button("save").width() == _BTN
     assert pp.button("pin").width() == _BTN
@@ -121,15 +121,15 @@ def test_pin_panel_single_row_same_size(qapp):
 
 def test_panel_actual_width(qapp):
     """Фактическая ширина новой 20-кнопочной панели — для мин. ширины
-    пин-окна (сообщается в отчёте сессии 8)."""
+    пин-окна."""
     tb = panel.ToolbarPanel(None)
     tb.adjustSize()
     assert tb.width() > 700  # заметно шире старой 16-кнопочной
 
 
 def test_pin_button_toggled_in_pin_panel(qapp):
-    # в пин-окне «Пин» — переключатель обратно: свой тултип и нажатый вид
-    # (правка владельца 17.10); на панели захвата — обычная кнопка
+    # в пин-окне «Пин» — переключатель обратно: свой тултип и нажатый вид;
+    # на панели захвата — обычная кнопка
     pp = panel.PinPanel(None)
     pin_btn = pp.button("pin")
     assert pin_btn.toolTip() == "Снять с пина — вернуться к захвату"

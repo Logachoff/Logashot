@@ -1,8 +1,8 @@
 """P1: окантовка пин-окна поверх полос прокрутки и 4 скруглённых угла.
 
-Б3.1: полосы — дочерние виджеты, они рисуются ПОСЛЕ paintEvent окна, поэтому
+Полосы — дочерние виджеты, они рисуются ПОСЛЕ paintEvent окна, поэтому
 правый и нижний сегменты рамки пропадали под ними, окно выглядело «открытым»
-справа и снизу. Б3.2: нижняя полоса идёт от x=0 и закрашивала нижний левый
+справа и снизу. Нижняя полоса идёт от x=0 и закрашивала нижний левый
 угол квадратом — дуга не читалась. Проверяем пиксельной пробой настоящего
 кадра окна (grab с детьми): линия рамки светлее полосы под ней, все четыре
 угла скруглены — при видимых полосах, без них и после ресайза.
@@ -107,7 +107,7 @@ def _assert_corners_rounded(win, at):
 
 
 def test_border_reads_above_scrollbars(pin_window):
-    """Б3.1: правый и нижний сегменты рамки видны поверх полос."""
+    """Правый и нижний сегменты рамки видны поверх полос."""
     win = pin_window
     assert win._vbar.isVisible() and win._hbar.isVisible()
     at = _pixels(win)
@@ -135,14 +135,14 @@ def test_border_layer_does_not_steal_mouse(pin_window):
     def widget_at(x, y):
         return QApplication.widgetAt(win.mapToGlobal(QPoint(x, y)))
 
-    # под слоем рамки — те же виджеты, что и до Б3.1
+    # под слоем рамки — те же виджеты, что и без него
     assert widget_at(win.width() - 3, win.height() // 2) is win._vbar
     assert widget_at(win.width() // 2, win.height() - 3) is win._hbar
     assert widget_at(win.width() - 3, win.height() - 3) is win  # угол — ресайз окна
 
 
 def test_all_corners_rounded_with_scrollbars(pin_window):
-    """Б3.2: при видимых полосах скруглены все 4 угла, дуги на месте."""
+    """При видимых полосах скруглены все 4 угла, дуги на месте."""
     _assert_corners_rounded(pin_window, _pixels(pin_window))
 
 
