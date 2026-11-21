@@ -1,7 +1,11 @@
 # LogaShot
 
+**Скачать:** [Установщик (EXE)](https://github.com/Logachoff/Logashot/releases/download/v0.4.0/LogaShot_0.4.0_setup.exe) · [Portable (ZIP)](https://github.com/Logachoff/Logashot/releases/download/v0.4.0/LogaShot_0.4.0_portable.zip) · [Все релизы](https://github.com/Logachoff/Logashot/releases)
+
 Скриншотер для Windows: нажал PrtScr, выделил область, разметил, сохранил или скопировал.
 Без аккаунта, без облака и без подписок — кадр не покидает машину.
+
+*A lightweight Windows screenshot tool — capture, annotate, pin, offline OCR. Fully local and private; the interface is in Russian.*
 
 Текущая версия — **0.4.0** (см. [CHANGELOG.md](CHANGELOG.md)).
 
@@ -27,6 +31,15 @@
   письмо с вложением в системном почтовом клиенте, один экземпляр приложения.
 
 ![Пин-окно: кадр с разметкой поверх всех окон](docs/assets/logashot_pin.png)
+
+## Чем отличается
+
+- **От ShareX:** не комбайн с сотней настроек — один жест от захвата до файла, настраивать
+  почти нечего.
+- **От Snipaste:** открытый код (MIT) и OCR из коробки — движок и русский язык уже есть
+  в Windows, ничего доустанавливать не нужно.
+- **От Lightshot:** кадр не улетает на чужой сервер — кнопки «поделиться ссылкой» нет
+  сознательно; OCR и всё остальное работают офлайн.
 
 ## Требования
 
@@ -84,12 +97,20 @@ python src\main.py
 
 | Файл | Что это |
 |---|---|
-| `LogaShot_0.4.0_setup.exe` | Установщик: копирует программу в `Program Files`, создаёт ярлыки и деинсталляцию; настройки — в реестре |
-| `LogaShot_0.4.0_portable.zip` | Portable: распаковать в любую папку и запустить `LogaShot.exe`; настройки — в `settings.ini` рядом с ним |
+| [`LogaShot_0.4.0_setup.exe`](https://github.com/Logachoff/Logashot/releases/download/v0.4.0/LogaShot_0.4.0_setup.exe) (~22 МБ) | Установщик: копирует программу в `Program Files`, создаёт ярлыки и деинсталляцию; настройки — в реестре |
+| [`LogaShot_0.4.0_portable.zip`](https://github.com/Logachoff/Logashot/releases/download/v0.4.0/LogaShot_0.4.0_portable.zip) (~29 МБ) | Portable: распаковать в любую папку и запустить `LogaShot.exe`; настройки — в `settings.ini` рядом с ним |
 
 Состав у них общий — один и тот же `LogaShot.exe` и папка `_internal`. Отличие только в том,
 где живут настройки: установщик не кладёт маркер `portable` и `settings.ini`, поэтому
 установленная копия не пытается писать в `Program Files`.
+Контрольные суммы SHA-256 опубликованы в заметках к [релизу](https://github.com/Logachoff/Logashot/releases/latest).
+
+### Антивирусы и SmartScreen
+
+Сборка сделана через PyInstaller и не имеет цифровой подписи кода. Windows SmartScreen
+и некоторые антивирусы могут показать предупреждение при первом запуске — это типичная
+реакция на упакованные Python-приложения без подписи (ложное срабатывание). Исходный код
+полностью открыт, сборку можно повторить самостоятельно: `python dev\build.py`.
 
 ## Сборка
 
