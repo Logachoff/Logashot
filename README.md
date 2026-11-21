@@ -2,10 +2,11 @@
 
 **Скачать:** [Установщик (EXE)](https://github.com/Logachoff/Logashot/releases/download/v0.4.0/LogaShot_0.4.0_setup.exe) · [Portable (ZIP)](https://github.com/Logachoff/Logashot/releases/download/v0.4.0/LogaShot_0.4.0_portable.zip) · [Все релизы](https://github.com/Logachoff/Logashot/releases)
 
-Скриншотер для Windows: нажал PrtScr, выделил область, разметил, сохранил или скопировал.
+Простой скриншотер для Windows — для быстрой и удобной ежедневной работы:
+нажал PrtScr, выделил область, разметил, сохранил или скопировал.
 Без аккаунта, без облака и без подписок — кадр не покидает машину.
 
-*A lightweight Windows screenshot tool — capture, annotate, pin, offline OCR. Fully local and private; the interface is in Russian.*
+*A simple, lightweight Windows screenshot tool for quick everyday work — capture, annotate, pin, offline OCR. Fully local and private; the interface is in Russian.*
 
 Текущая версия — **0.4.0** (см. [CHANGELOG.md](CHANGELOG.md)).
 
